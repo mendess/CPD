@@ -52,3 +52,6 @@ Mkfile.old
 dkms.conf
 .clangd
 target/
+*.in
+*.out
+*.mats
