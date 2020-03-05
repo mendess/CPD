@@ -10,6 +10,8 @@ typedef struct Matrix {
 
 Matrix matrix_make(size_t rows, size_t columns);
 
+Matrix matrix_clone(Matrix const* other);
+
 double const* matrix_at(Matrix const* m, size_t row, size_t column);
 
 double* matrix_at_mut(Matrix* m, size_t row, size_t column);
