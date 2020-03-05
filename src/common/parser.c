@@ -116,7 +116,7 @@ ParserError parse_matrix_a(StrIter* iter, size_t non_zero_elems, Matrix* a) {
         } else if (n_lines > non_zero_elems) {
             fputs("More elements than expected\n", stderr);
             return PARSER_ERROR_INVALID_FORMAT;
-        } else if (0.0 > value|| value > 5.0) {
+        } else if (0.0 > value || value > 5.0) {
             fprintf(
                 stderr,
                 "Invalid matrix value at line %zu: %lf\n",

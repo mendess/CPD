@@ -8,8 +8,8 @@ AlignTrailingComments: 'true'
 AllowAllParametersOfDeclarationOnNextLine: 'true'
 AllowShortBlocksOnASingleLine: 'true'
 AllowShortCaseLabelsOnASingleLine: 'false'
-AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: 'true'
+AllowShortFunctionsOnASingleLine: Inline
 AllowShortLoopsOnASingleLine: 'true'
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: 'false'

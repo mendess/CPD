@@ -31,7 +31,9 @@ double* matrix_at_mut(Matrix* m, size_t row, size_t column) {
     return m->data + (row * m->columns + column);
 }
 
-void matrix_free(Matrix m) { free(m.data); }
+void matrix_free(Matrix m) {
+    free(m.data);
+}
 
 MatrixIter matrix_iter_row(Matrix const* const m, size_t const row) {
     return (MatrixIter){
