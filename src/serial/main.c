@@ -1,10 +1,29 @@
-#include "vector.h"
-#include <stdio.h>
+#include "parser.h"
 
-int main(void) {
-    Vec v = vec_make(3);
-    vec_push(&v, 42);
-    vec_push(&v, 314);
-    vec_push(&v, 0);
-    printf("%d\n", vec_at(&v, 2));
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char const** argv) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s [filename]\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+    Matrixes matrixes;
+    ParserError error = parse_file(argv[1], &matrixes);
+    switch (error) {
+        case PARSER_ERROR_IO:
+            fputs("IO Error\n", stderr);
+            return EXIT_FAILURE;
+        case PARSER_ERROR_INVALID_FORMAT:
+            fputs("Format Error\n", stderr);
+            return EXIT_FAILURE;
+        default:
+            break;
+    }
+
+    matrix_print(&matrixes.a);
+    matrix_print(&matrixes.l);
+    matrix_print(&matrixes.r);
+
+    return EXIT_SUCCESS;
 }
