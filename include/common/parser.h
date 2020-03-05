@@ -12,7 +12,7 @@ typedef struct Matrixes {
 } Matrixes;
 
 typedef enum ParserError {
-    PARSER_ERROR_OK = 0,
+    PARSER_ERROR_OK,
     PARSER_ERROR_IO,
     PARSER_ERROR_INVALID_FORMAT,
 } ParserError;

@@ -1,6 +1,8 @@
 #include "matrix.h"
-#include <stdlib.h>
+
+#define _DEFAULT_SOURCE
 #include <stdio.h>
+#include <stdlib.h>
 
 #define RAND01 ((double) random() / (double) RAND_MAX)
 
@@ -18,19 +20,31 @@ double* matrix_at_mut(Matrix* m, size_t row, size_t column) {
     return m->data + (row * m->columns + column);
 }
 
-void matrix_free(Matrix m) {
-    free(m.data);
-}
+void matrix_free(Matrix m) { free(m.data); }
 
-MatrixIter matrix_iter_row(Matrix* m, size_t row) {
+MatrixIter matrix_iter_row(Matrix const* const m, size_t const row) {
     return (MatrixIter){
         .iter = m->data + (row * m->columns),
         .end = m->data + (row * m->columns + m->columns),
     };
 }
 
-MatrixIter matrix_iter_full(Matrix* m) {
+MatrixIter matrix_iter_full(Matrix const* const m) {
     return (MatrixIter){
+        .iter = m->data + (0 * m->columns),
+        .end = m->data + ((m->rows - 1) * m->columns + m->columns),
+    };
+}
+
+MatrixIterMut matrix_iter_row_mut(Matrix* const m, size_t const row) {
+    return (MatrixIterMut){
+        .iter = m->data + (row * m->columns),
+        .end = m->data + (row * m->columns + m->columns),
+    };
+}
+
+MatrixIterMut matrix_iter_full_mut(Matrix* m) {
+    return (MatrixIterMut){
         .iter = m->data + (0 * m->columns),
         .end = m->data + ((m->rows - 1) * m->columns + m->columns),
     };
@@ -49,12 +63,11 @@ void matrix_print(Matrix const* m) {
 void random_fill_LR(size_t nF, Matrix* l, Matrix* r) {
     srandom(0);
 
-    for (MatrixIter i = matrix_iter_full(l); i.iter != i.end; ++i.iter) {
+    for (MatrixIterMut i = matrix_iter_full_mut(l); i.iter != i.end; ++i.iter) {
         *i.iter = RAND01 / (double) nF; // Why is this division being done?
     }
 
-    for (MatrixIter i = matrix_iter_full(r); i.iter != i.end; ++i.iter) {
+    for (MatrixIterMut i = matrix_iter_full_mut(r); i.iter != i.end; ++i.iter) {
         *i.iter = RAND01 / (double) nF;
     }
 }
-

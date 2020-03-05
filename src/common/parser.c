@@ -56,28 +56,29 @@ static int scan_line(StrIter* s_iter, char const* const format, ...) {
         if (*s_iter->str == '\0') return formats_read;
         ++s_iter->str;
     }
+    ++s_iter->str;
     return formats_read;
 }
 
 ParserError parse_header(StrIter* iter, Header* p) {
     unsigned int num_iterations = 0;
     if (scan_line(iter, "%zu\n", &num_iterations) != 1) {
-        fputs("Failed to get number of iterations", stderr);
+        fputs("Failed to get number of iterations\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
     float alpha;
     if (scan_line(iter, "%f", &alpha) != 1) {
-        fputs("Failed to get alpha", stderr);
+        fputs("Failed to get alpha\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
     unsigned int features;
-    if (scan_line(iter, "%i", &features) != 1) {
-        fputs("Failed to get number of features", stderr);
+    if (scan_line(iter, "%d", &features) != 1) {
+        fputs("Failed to get number of features\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
     unsigned int users, items, non_zero_elems;
-    if (scan_line(iter, "%i %i %i", &users, &items, &non_zero_elems) != 3) {
-        fputs("Failed to get matrix A information", stderr);
+    if (scan_line(iter, "%u %u %u", &users, &items, &non_zero_elems) != 3) {
+        fputs("Failed to get matrix A information\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
     *p = (Header){
@@ -95,12 +96,12 @@ ParserError parse_matrix_a(StrIter* iter, size_t non_zero_elems, Matrix* a) {
     size_t row, column;
     double value;
     size_t n_lines = 0;
-    while (scan_line(iter, "%zu %zu %lf", &row, &column, &value) != 3) {
+    while (scan_line(iter, "%zu %zu %lf", &row, &column, &value) == 3) {
         // Perdi o nice scan direto para a matriz que tinhas.
         // Mas acedo menos vezes a matriz que ta longe e passo mais tempo
         // em variaveis "locais" :thinking:
         ++n_lines;
-        fprintf(stderr, "line %zu: %zu %zu %lf", n_lines, row, column, value);
+        fprintf(stderr, "line %zu: %zu %zu %lf\n", n_lines, row, column, value);
         if (row >= a->rows || column >= a->columns) {
             fprintf(
                 stderr,
@@ -112,21 +113,22 @@ ParserError parse_matrix_a(StrIter* iter, size_t non_zero_elems, Matrix* a) {
                 row,
                 column);
             return PARSER_ERROR_INVALID_FORMAT;
-        } else if (n_lines >= non_zero_elems) {
-            fputs("More elements than expected", stderr);
+        } else if (n_lines > non_zero_elems) {
+            fputs("More elements than expected\n", stderr);
             return PARSER_ERROR_INVALID_FORMAT;
-        } else if (0.0 > value || value < 5.0) {
+        } else if (0.0 > value|| value > 5.0) {
             fprintf(
                 stderr,
                 "Invalid matrix value at line %zu: %lf\n",
                 n_lines,
                 value);
+            return PARSER_ERROR_INVALID_FORMAT;
         }
         *matrix_at_mut(a, row, column) = value;
     }
 
     if (n_lines < non_zero_elems) {
-        fputs("Not as many elements as expected", stderr);
+        fputs("Not as many elements as expected\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
 
