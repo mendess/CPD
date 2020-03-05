@@ -9,7 +9,7 @@
 Matrix matrix_make(size_t rows, size_t columns) {
     return (Matrix){.rows = rows,
                     .columns = columns,
-                    .data = malloc(rows * columns * sizeof(double))};
+                    .data = calloc(rows * columns, sizeof(double))};
 }
 
 double const* matrix_at(Matrix const* m, size_t row, size_t column) {
