@@ -8,9 +8,18 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define RAND01 ((double) random() / (double) RAND_MAX)
+typedef struct StrIter {
+    char const* str;
+} StrIter;
 
-static Matrix matrix_make(size_t rows, size_t columns);
+typedef struct Header {
+    size_t features;
+    size_t users;
+    size_t items;
+    size_t non_zero_elems;
+    float alpha;
+    unsigned int num_iterations;
+} Header;
 
 static char* read_file(char const* const filename) {
     int const fd = open(filename, O_RDONLY);
@@ -38,22 +47,6 @@ static char* read_file(char const* const filename) {
     return file;
 }
 
-static void random_fill_LR(size_t nF, Matrix* l, Matrix* r) {
-    srandom(0);
-
-    for (MatrixIter i = matrix_iter_full(l); i.iter != i.end; ++i.iter) {
-        *i.iter = RAND01 / (double) nF; // Why is this division being done?
-    }
-
-    for (MatrixIter i = matrix_iter_full(r); i.iter != i.end; ++i.iter) {
-        *i.iter = RAND01 / (double) nF;
-    }
-}
-
-typedef struct StrIter {
-    char const* str;
-} StrIter;
-
 static int scan_line(StrIter* s_iter, char const* const format, ...) {
     va_list args;
     va_start(args, format);
@@ -66,16 +59,7 @@ static int scan_line(StrIter* s_iter, char const* const format, ...) {
     return formats_read;
 }
 
-typedef struct Params {
-    size_t features;
-    size_t users;
-    size_t items;
-    size_t non_zero_elems;
-    float alpha;
-    unsigned int num_iterations;
-} Params;
-
-ParserError parse_params(StrIter* iter, Params* p) {
+ParserError parse_header(StrIter* iter, Header* p) {
     unsigned int num_iterations = 0;
     if (scan_line(iter, "%zu\n", &num_iterations) != 1) {
         fputs("Failed to get number of iterations", stderr);
@@ -96,7 +80,7 @@ ParserError parse_params(StrIter* iter, Params* p) {
         fputs("Failed to get matrix A information", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
-    *p = (Params){
+    *p = (Header){
         .num_iterations = num_iterations,
         .alpha = alpha,
         .features = features,
@@ -154,64 +138,29 @@ ParserError parse_file(char const* const filename, Matrixes* matrixes) {
     if (contents == NULL) return PARSER_ERROR_IO;
     StrIter content_iter = {.str = contents};
 
-    Params params;
-    if (parse_params(&content_iter, &params) != PARSER_ERROR_OK) {
+    Header header;
+    ParserError error = parse_header(&content_iter, &header);
+    if (error != PARSER_ERROR_OK) {
         free(contents);
-        return PARSER_ERROR_INVALID_FORMAT;
+        return error;
     }
 
-    Matrix a = matrix_make(params.users, params.items);
-    if (PARSER_ERROR_OK !=
-        parse_matrix_a(&content_iter, params.non_zero_elems, &a)) {
-        free(contents);
+    Matrix a = matrix_make(header.users, header.items);
+    error = parse_matrix_a(&content_iter, header.non_zero_elems, &a);
+    free(contents);
+    if (error != PARSER_ERROR_OK) {
+        matrix_free(a);
+        return error;
     }
-    Matrix l = matrix_make(params.users, params.features);
-    Matrix r = matrix_make(params.features, params.items);
-    random_fill_LR(params.features, &l, &r);
+    Matrix l = matrix_make(header.users, header.features);
+    Matrix r = matrix_make(header.features, header.items);
+    random_fill_LR(header.features, &l, &r);
     *matrixes = (Matrixes){
-        .num_iterations = params.num_iterations,
-        .alpha = params.alpha,
+        .num_iterations = header.num_iterations,
+        .alpha = header.alpha,
         .a = a,
         .l = l,
         .r = r,
     };
     return PARSER_ERROR_OK;
-}
-
-Matrix matrix_make(size_t rows, size_t columns) {
-    return (Matrix){.rows = rows,
-                    .columns = columns,
-                    .data = malloc(rows * columns * sizeof(double))};
-}
-
-double const* matrix_at(Matrix const* m, size_t row, size_t column) {
-    return m->data + (row * m->columns + column);
-}
-
-double* matrix_at_mut(Matrix* m, size_t row, size_t column) {
-    return m->data + (row * m->columns + column);
-}
-
-MatrixIter matrix_iter_row(Matrix* m, size_t row) {
-    return (MatrixIter){
-        .iter = m->data + (row * m->columns),
-        .end = m->data + (row * m->columns + m->columns),
-    };
-}
-
-MatrixIter matrix_iter_full(Matrix* m) {
-    return (MatrixIter){
-        .iter = m->data + (0 * m->columns),
-        .end = m->data + ((m->rows - 1) * m->columns + m->columns),
-    };
-}
-
-void matrix_print(Matrix const* m) {
-    for (size_t i = 0; i < m->rows; i++) {
-        for (size_t j = 0; j < m->columns; j++) {
-            printf("%.3lf   ", *matrix_at(m, i, j));
-        }
-        printf("\n");
-    }
-    printf("\n");
 }
