@@ -31,7 +31,7 @@ MatrixIter matrix_iter_row(Matrix const* const m, size_t const row) {
 
 MatrixIter matrix_iter_full(Matrix const* const m) {
     return (MatrixIter){
-        .iter = m->data + (0 * m->columns),
+        .iter = m->data,
         .end = m->data + ((m->rows - 1) * m->columns + m->columns),
     };
 }
@@ -45,7 +45,7 @@ MatrixIterMut matrix_iter_row_mut(Matrix* const m, size_t const row) {
 
 MatrixIterMut matrix_iter_full_mut(Matrix* m) {
     return (MatrixIterMut){
-        .iter = m->data + (0 * m->columns),
+        .iter = m->data,
         .end = m->data + ((m->rows - 1) * m->columns + m->columns),
     };
 }
