@@ -7,7 +7,7 @@
 
 #define RAND01 ((double) random() / (double) RAND_MAX)
 
-Matrix matrix_make(size_t rows, size_t columns) {
+Matrix matrix_make(size_t const rows, size_t const columns) {
     return (Matrix){.rows = rows,
                     .columns = columns,
                     .data = calloc(rows * columns, sizeof(double))};
@@ -23,16 +23,17 @@ Matrix matrix_clone(Matrix const* const other) {
     return new_m;
 }
 
-double const* matrix_at(Matrix const* m, size_t row, size_t column) {
+double const*
+matrix_at(Matrix const* const m, size_t const row, size_t const column) {
     return m->data + (row * m->columns + column);
 }
 
-double* matrix_at_mut(Matrix* m, size_t row, size_t column) {
+double* matrix_at_mut(Matrix* const m, size_t const row, size_t const column) {
     return m->data + (row * m->columns + column);
 }
 
-void matrix_free(Matrix m) {
-    free(m.data);
+void matrix_free(Matrix* m) {
+    free(m->data);
 }
 
 MatrixIter matrix_iter_row(Matrix const* const m, size_t const row) {
@@ -54,22 +55,21 @@ MatrixIterMut matrix_iter_row_mut(Matrix* const m, size_t const row) {
     };
 }
 
-MatrixIterMut matrix_iter_full_mut(Matrix* m) {
+MatrixIterMut matrix_iter_full_mut(Matrix* const m) {
     return (MatrixIterMut){.iter = m->data,
                            .end = m->data + (m->rows * m->columns)};
 }
 
 void matrix_print(Matrix const* m) {
-    for (size_t i = 0; i < m->rows; i++) {
-        for (size_t j = 0; j < m->columns; j++) {
-            printf("%.3lf   ", *matrix_at(m, i, j));
+    for (size_t r = 0; r < m->rows; r++) {
+        for (MatrixIter i = matrix_iter_row(m, r); i.iter != i.end; ++i.iter) {
+            printf("%.3lf   ", *i.iter);
         }
-        printf("\n");
+        putchar('\n');
     }
-    printf("\n");
 }
 
-void random_fill_LR(size_t nF, Matrix* l, Matrix* r) {
+void random_fill_LR(size_t const nF, Matrix* const l, Matrix* const r) {
     srandom(0);
 
     for (MatrixIterMut i = matrix_iter_full_mut(l); i.iter != i.end; ++i.iter) {

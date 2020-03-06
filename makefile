@@ -5,15 +5,15 @@ HEADERS_SERIAL = include/serial
 HEADERS_OPENMP = include/openmp
 HEADERS_MPI    = include/mpi
 
-RELEASE_DIR_COMMON = $(BUILD_DIR)/release/common
-RELEASE_DIR_SERIAL = $(BUILD_DIR)/release/serial
-RELEASE_DIR_OPENMP = $(BUILD_DIR)/release/openmp
-RELEASE_DIR_MPI    = $(BUILD_DIR)/release/mpi
-
 DEBUG_DIR_COMMON = $(BUILD_DIR)/debug/common
 DEBUG_DIR_SERIAL = $(BUILD_DIR)/debug/serial
 DEBUG_DIR_OPENMP = $(BUILD_DIR)/debug/openmp
 DEBUG_DIR_MPI    = $(BUILD_DIR)/debug/mpi
+
+RELEASE_DIR_COMMON = $(BUILD_DIR)/release/common
+RELEASE_DIR_SERIAL = $(BUILD_DIR)/release/serial
+RELEASE_DIR_OPENMP = $(BUILD_DIR)/release/openmp
+RELEASE_DIR_MPI    = $(BUILD_DIR)/release/mpi
 
 SOURCES_COMMON_DIR = $(SOURCES_DIR)/common
 SOURCES_SERIAL_DIR = $(SOURCES_DIR)/serial
@@ -35,10 +35,10 @@ OBJ_RELEASE_SERIAL = $(foreach o, $(patsubst $(SOURCES_SERIAL_DIR)/%.c, %.o, $(S
 OBJ_RELEASE_OPENMP = $(foreach o, $(patsubst $(SOURCES_OPENMP_DIR)/%.c, %.o, $(SOURCES_OPENMP)), $(RELEASE_DIR_OPENMP)/$o)
 OBJ_RELEASE_MPI    = $(foreach o, $(patsubst $(SOURCES_MPI_DIR)/%.c, %.o, $(SOURCES_MPI)), $(RELEASE_DIR_MPI)/$o)
 
-DFLAGS = -g -O0
+DFLAGS = -g -O0 -DDEBUG
 RFLAGS = -O2 -march=native
 
-CFLAGS = -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla
+override CFLAGS += -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla
 PROG = recomender
 
 debug: debug_serial debug_openmp debug_mpi
@@ -54,14 +54,14 @@ debug_mpi: __debug_dir $(OBJ_DEBUG) $(OBJ_DEBUG_MPI)
 
 release: release_serial release_openmp release_mpi
 
-release_serial: $(OBJ_RELEASE) $(OBJ_RELEASE)
-	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL) $(RFLAGS) -o $(RELEASE_DIR)/$(PROG)
+release_serial: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL)
+	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL) $(RFLAGS) -o $(RELEASE_DIR_SERIAL)/$(PROG)
 
-release_openmp: $(OBJ_RELEASE)
-	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP) $(RFLAGS) -o $(RELEASE_DIR)/$(PROG)
+release_openmp: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP)
+	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP) $(RFLAGS) -o $(RELEASE_DIR_OPENMP)/$(PROG)
 
-release_mpi: $(OBJ_RELEASE)
-	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI)    $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_MPI)    $(RFLAGS) -o $(RELEASE_DIR)/$(PROG)
+release_mpi: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_MPI)
+	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI)    $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_MPI)    $(RFLAGS) -o $(RELEASE_DIR_MPI)/$(PROG)
 
 $(DEBUG_DIR_COMMON)/%.o: $(SOURCES_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_COMMON)/%, $(SOURCES_COMMON_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS_COMMON) -c -o $@
@@ -76,16 +76,16 @@ $(DEBUG_DIR_MPI)/%.o: $(SOURCES_MPI) $(SOURCES_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_MPI)/%, $(SOURCES_MPI_DIR)/%, $@))       $(CFLAGS) $(DFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI)    -c -o $@
 
 
-$(RELEASE_DIR_COMMON)/%.o:
+$(RELEASE_DIR_COMMON)/%.o: $(SOURCES_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_COMMON)/%, $(SOURCES_COMMON_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -c -o $@
 
-$(RELEASE_DIR_SERIAL)/%.o:
+$(RELEASE_DIR_SERIAL)/%.o: $(SOURCES_SERIAL) $(SOURCES_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_SERIAL)/%, $(SOURCES_SERIAL_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) -c -o $@
 
-$(RELEASE_DIR_OPENMP)/%.o:
+$(RELEASE_DIR_OPENMP)/%.o: $(SOURCES_OPENMP) $(SOURCES_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_OPENMP)/%, $(SOURCES_OPENMP_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) -c -o $@
 
-$(RELEASE_DIR_MPI)/%.o:
+$(RELEASE_DIR_MPI)/%.o: $(SOURCES_MPI) $(SOURCES_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_MPI)/%, $(SOURCES_MPI_DIR)/%, $@))       $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI) -c -o $@
 
 clean:
