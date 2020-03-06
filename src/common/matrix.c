@@ -63,7 +63,7 @@ MatrixIterMut matrix_iter_full_mut(Matrix* const m) {
 void matrix_print(Matrix const* m) {
     for (size_t r = 0; r < m->rows; r++) {
         for (MatrixIter i = matrix_iter_row(m, r); i.iter != i.end; ++i.iter) {
-            printf("%.3lf   ", *i.iter);
+            printf("%.6lf   ", *i.iter);
         }
         putchar('\n');
     }
