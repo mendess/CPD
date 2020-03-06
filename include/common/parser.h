@@ -6,7 +6,7 @@
 
 typedef struct Matrixes {
     size_t num_iterations;
-    float alpha;
+    double alpha;
     Matrix a;
     Matrix l;
     Matrix r;
