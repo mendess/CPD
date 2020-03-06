@@ -17,7 +17,7 @@ typedef struct Header {
     size_t users;
     size_t items;
     size_t non_zero_elems;
-    float alpha;
+    double alpha;
     unsigned int num_iterations;
 } Header;
 
@@ -47,10 +47,10 @@ static char* read_file(char const* const filename) {
     return file;
 }
 
-static int scan_line(StrIter* s_iter, char const* const format, ...) {
+static int scan_line(StrIter* const s_iter, char const* const format, ...) {
     va_list args;
     va_start(args, format);
-    int formats_read = vsscanf(s_iter->str, format, args);
+    int const formats_read = vsscanf(s_iter->str, format, args);
     va_end(args);
     while (*s_iter->str != '\n') {
         if (*s_iter->str == '\0') return formats_read;
@@ -60,24 +60,24 @@ static int scan_line(StrIter* s_iter, char const* const format, ...) {
     return formats_read;
 }
 
-ParserError parse_header(StrIter* iter, Header* p) {
-    unsigned int num_iterations = 0;
+ParserError parse_header(StrIter* const iter, Header* const p) {
+    size_t num_iterations = 0;
     if (scan_line(iter, "%zu\n", &num_iterations) != 1) {
         fputs("Failed to get number of iterations\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
-    float alpha;
+    double alpha;
     if (scan_line(iter, "%f", &alpha) != 1) {
         fputs("Failed to get alpha\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
-    unsigned int features;
-    if (scan_line(iter, "%d", &features) != 1) {
+    size_t features;
+    if (scan_line(iter, "%zu", &features) != 1) {
         fputs("Failed to get number of features\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
-    unsigned int users, items, non_zero_elems;
-    if (scan_line(iter, "%u %u %u", &users, &items, &non_zero_elems) != 3) {
+    size_t users, items, non_zero_elems;
+    if (scan_line(iter, "%zu %zu %zu", &users, &items, &non_zero_elems) != 3) {
         fputs("Failed to get matrix A information\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
@@ -92,16 +92,16 @@ ParserError parse_header(StrIter* iter, Header* p) {
     return PARSER_ERROR_OK;
 }
 
-ParserError parse_matrix_a(StrIter* iter, size_t non_zero_elems, Matrix* a) {
+ParserError parse_matrix_a(
+    StrIter* const iter, size_t const non_zero_elems, Matrix* const a) {
     size_t row, column;
     double value;
     size_t n_lines = 0;
     while (scan_line(iter, "%zu %zu %lf", &row, &column, &value) == 3) {
-        // Perdi o nice scan direto para a matriz que tinhas.
-        // Mas acedo menos vezes a matriz que ta longe e passo mais tempo
-        // em variaveis "locais" :thinking:
         ++n_lines;
+#ifdef DEBUG
         fprintf(stderr, "line %zu: %zu %zu %lf\n", n_lines, row, column, value);
+#endif
         if (row >= a->rows || column >= a->columns) {
             fprintf(
                 stderr,
@@ -135,7 +135,7 @@ ParserError parse_matrix_a(StrIter* iter, size_t non_zero_elems, Matrix* a) {
     return PARSER_ERROR_OK;
 }
 
-ParserError parse_file(char const* const filename, Matrixes* matrixes) {
+ParserError parse_file(char const* const filename, Matrixes* const matrixes) {
     char* contents = read_file(filename);
     if (contents == NULL) return PARSER_ERROR_IO;
     StrIter content_iter = {.str = contents};
@@ -151,7 +151,7 @@ ParserError parse_file(char const* const filename, Matrixes* matrixes) {
     error = parse_matrix_a(&content_iter, header.non_zero_elems, &a);
     free(contents);
     if (error != PARSER_ERROR_OK) {
-        matrix_free(a);
+        matrix_free(&a);
         return error;
     }
     Matrix l = matrix_make(header.users, header.features);
