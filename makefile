@@ -38,7 +38,7 @@ OBJ_RELEASE_MPI    = $(foreach o, $(patsubst $(SOURCES_MPI_DIR)/%.c, %.o, $(SOUR
 DFLAGS = -g -O0
 RFLAGS = -O2 -march=native
 
-CFLAGS = -std=c18 -W -Wall -Wpedantic -pedantic -Werror=vla
+CFLAGS = -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla
 PROG = recomender
 
 debug: debug_serial debug_openmp debug_mpi
