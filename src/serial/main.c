@@ -1,5 +1,5 @@
 #include "parser.h"
-
+#include "matFact.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -21,11 +21,23 @@ int main(int argc, char const** argv) {
             break;
     }
 
+    puts("Matrix A\n");
     matrix_print(&matrixes.a);
+    puts("Matrix L\n");
     matrix_print(&matrixes.l);
+    puts("Matrix R\n");
     matrix_print(&matrixes.r);
 
     matrix_b(&matrixes.l, &matrixes.r);
+    next_iter(&matrixes.a, &matrixes.l, &matrixes.r, matrixes.alpha);
+
+    puts("After first iteration \n");
+    puts("Matrix A\n");
+    matrix_print(&matrixes.a);
+    puts("Matrix L\n");
+    matrix_print(&matrixes.l);
+    puts("Matrix R\n");
+    matrix_print(&matrixes.r);
 
     return EXIT_SUCCESS;
 }

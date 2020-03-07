@@ -82,14 +82,14 @@ void random_fill_LR(size_t const nF, Matrix* const l, Matrix* const r) {
 
 Matrix matrix_b(Matrix const *L, Matrix const *R){
     Matrix matrix = matrix_make(L->rows, R->columns);
-    for (unsigned int i = 0; i < L->rows; i++) {
-        for (unsigned int j = 0; j < R->columns; ++j) {
-            for (unsigned int k = 0; k < L->columns; ++k) {
+    for (size_t i = 0; i < L->rows; i++) {
+        for (size_t j = 0; j < R->columns; ++j) {
+            for (size_t k = 0; k < L->columns; ++k) {
                 *matrix_at_mut(&matrix,i,j) += *matrix_at(L, i, k) * *matrix_at(R, k, j);
             }
         }
     }
 
-    matrix_print(&matrix);
+    //matrix_print(&matrix);
     return matrix;
 }
