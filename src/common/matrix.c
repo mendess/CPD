@@ -23,8 +23,7 @@ Matrix matrix_clone(Matrix const* const other) {
     return new_m;
 }
 
-double const*
-matrix_at(Matrix const* const m, size_t const row, size_t const column) {
+double const*matrix_at(Matrix const* const m, size_t const row, size_t const column) {
     return m->data + (row * m->columns + column);
 }
 
@@ -79,4 +78,18 @@ void random_fill_LR(size_t const nF, Matrix* const l, Matrix* const r) {
     for (MatrixIterMut i = matrix_iter_full_mut(r); i.iter != i.end; ++i.iter) {
         *i.iter = RAND01 / (double) nF;
     }
+}
+
+Matrix matrix_b(Matrix const *L, Matrix const *R){
+    Matrix matrix = matrix_make(L->rows, R->columns);
+    for (unsigned int i = 0; i < L->rows; i++) {
+        for (unsigned int j = 0; j < R->columns; ++j) {
+            for (unsigned int k = 0; k < L->columns; ++k) {
+                *matrix_at_mut(&matrix,i,j) += *matrix_at(L, i, k) * *matrix_at(R, k, j);
+            }
+        }
+    }
+
+    matrix_print(&matrix);
+    return matrix;
 }

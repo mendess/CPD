@@ -25,5 +25,7 @@ int main(int argc, char const** argv) {
     matrix_print(&matrixes.l);
     matrix_print(&matrixes.r);
 
+    matrix_b(&matrixes.l, &matrixes.r);
+
     return EXIT_SUCCESS;
 }
