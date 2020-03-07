@@ -20,11 +20,13 @@ int main(int argc, char const** argv) {
         default:
             break;
     }
-    
+
     puts("Matrix A\n");
     matrix_print(&matrixes.a);
+    puts("==========================================");
     puts("Matrix L\n");
     matrix_print(&matrixes.l);
+    puts("==========================================");
     puts("Matrix R\n");
     matrix_print(&matrixes.r);
 
@@ -32,11 +34,13 @@ int main(int argc, char const** argv) {
     next_iter(&matrixes.a, &matrixes.l, &matrixes.r, matrixes.alpha);
 
     puts("After first iteration \n");
-    puts("Matrix A\n");
+    puts("Matrix A\n\n");
     matrix_print(&matrixes.a);
-    puts("Matrix L\n");
+    puts("==========================================");
+    puts("Matrix L\n\n");
     matrix_print(&matrixes.l);
-    puts("Matrix R\n");
+    puts("==========================================");
+    puts("Matrix R\n\n");
     matrix_print(&matrixes.r);
 
     return EXIT_SUCCESS;
