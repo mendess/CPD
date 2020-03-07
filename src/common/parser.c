@@ -67,7 +67,7 @@ ParserError parse_header(StrIter* const iter, Header* const p) {
         return PARSER_ERROR_INVALID_FORMAT;
     }
     double alpha;
-    if (scan_line(iter, "%f", &alpha) != 1) {
+    if (scan_line(iter, "%lf", &alpha) != 1) {
         fputs("Failed to get alpha\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
