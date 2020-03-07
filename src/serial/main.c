@@ -20,7 +20,7 @@ int main(int argc, char const** argv) {
         default:
             break;
     }
-
+    
     puts("Matrix A\n");
     matrix_print(&matrixes.a);
     puts("Matrix L\n");
