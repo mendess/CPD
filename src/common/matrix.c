@@ -19,11 +19,13 @@ Matrix matrix_clone(Matrix const* const other) {
         .columns = other->columns,
         .data = malloc(other->rows * other->columns * sizeof(double)),
     };
-    memcpy(new_m.data, other->data, new_m.rows * new_m.columns);
+    memcpy(
+        new_m.data, other->data, sizeof(double) * new_m.rows * new_m.columns);
     return new_m;
 }
 
-double const*matrix_at(Matrix const* const m, size_t const row, size_t const column) {
+double const*
+matrix_at(Matrix const* const m, size_t const row, size_t const column) {
     return m->data + (row * m->columns + column);
 }
 
@@ -80,16 +82,17 @@ void random_fill_LR(size_t const nF, Matrix* const l, Matrix* const r) {
     }
 }
 
-Matrix matrix_b(Matrix const *L, Matrix const *R){
+Matrix matrix_b(Matrix const* L, Matrix const* R) {
     Matrix matrix = matrix_make(L->rows, R->columns);
     for (size_t i = 0; i < L->rows; i++) {
         for (size_t j = 0; j < R->columns; ++j) {
             for (size_t k = 0; k < L->columns; ++k) {
-                *matrix_at_mut(&matrix,i,j) += *matrix_at(L, i, k) * *matrix_at(R, k, j);
+                *matrix_at_mut(&matrix, i, j) +=
+                    *matrix_at(L, i, k) * *matrix_at(R, k, j);
             }
         }
     }
 
-    //matrix_print(&matrix);
+    // matrix_print(&matrix);
     return matrix;
 }
