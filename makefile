@@ -46,7 +46,7 @@ debug: debug_serial debug_openmp debug_mpi
 debug_serial: __debug_dir $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL)
 	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL) $(DFLAGS) -o $(DEBUG_DIR_SERIAL)/$(PROG)
 
-debug_openmp: __debug_dir $(OBJ_DEBUG) $(OBJ_DEBUG_OPENMP)
+debug_openmp: pragma_check __debug_dir $(OBJ_DEBUG) $(OBJ_DEBUG_OPENMP)
 	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP) $(DFLAGS) -o $(DEBUG_DIR_OPENMP)/$(PROG)
 
 debug_mpi: __debug_dir $(OBJ_DEBUG) $(OBJ_DEBUG_MPI)
@@ -57,7 +57,7 @@ release: release_serial release_openmp release_mpi
 release_serial: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL)
 	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL) $(RFLAGS) -o $(RELEASE_DIR_SERIAL)/$(PROG)
 
-release_openmp: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP)
+release_openmp: pragma_check __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP)
 	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP) $(RFLAGS) -o $(RELEASE_DIR_OPENMP)/$(PROG)
 
 release_mpi: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_MPI)
@@ -104,3 +104,6 @@ __release_dir:
 	@mkdir -p $(RELEASE_DIR_MPI)
 
 print-% : ; @echo $* = $($*)
+
+pragma_check:
+	./scripts/pragma_check.sh
