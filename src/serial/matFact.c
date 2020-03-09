@@ -2,24 +2,26 @@
 
 #include "parser.h"
 
+#include <assert.h>
 #include <stdio.h>
 
-static inline double delta(double const A, double const B, double const LR) {
-    return 2 * (A - B) * (-LR);
+static inline double delta(double const a, double const b, double const lr) {
+    return 2 * (a - b) * (-lr);
 }
 
-void matrix_b(Matrix const* L, Matrix const* R, Matrix* matrix) {
-    for (size_t i = 0; i < L->rows; i++) {
-        for (size_t j = 0; j < R->columns; ++j) {
-            for (size_t k = 0; k < L->columns; ++k) {
+void matrix_b(Matrix const* l, Matrix const* r, Matrix* matrix) {
+    assert(l->columns == r->rows);
+    for (size_t i = 0; i < l->rows; i++) {
+        for (size_t j = 0; j < r->columns; ++j) {
+            for (size_t k = 0; k < l->columns; ++k) {
                 *matrix_at_mut(matrix, i, j) +=
-                    *matrix_at(L, i, k) * *matrix_at(R, k, j);
+                    *matrix_at(l, i, k) * *matrix_at(r, k, j);
             }
         }
     }
 }
 
-void next_iterL(Matrices const* matrices, Matrix* aux_L, Matrix const* b) {
+void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
     for (size_t i = 0; i < matrices->l.rows; i++) {
         for (size_t k = 0; k < matrices->l.columns; k++) {
             double aux = 0;
@@ -31,13 +33,13 @@ void next_iterL(Matrices const* matrices, Matrix* aux_L, Matrix const* b) {
                         *matrix_at(&matrices->r, k, j));
                 }
             }
-            *matrix_at_mut(aux_L, i, k) =
+            *matrix_at_mut(aux_l, i, k) =
                 *matrix_at(&matrices->l, i, k) - matrices->alpha * aux;
         }
     }
 }
 
-void next_iterR(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
+void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
     for (size_t k = 0; k < matrices->r.rows; k++) {
         for (size_t j = 0; j < matrices->r.columns; j++) {
             double aux = 0;
@@ -68,8 +70,8 @@ Matrix iter(Matrices* matrices) {
     for (size_t i = 0; i < matrices->num_iterations; i++) {
         if (i != 0) matrix_clear(&b); // TODO: benchmark
         matrix_b(&matrices->l, &matrices->r, &b);
-        next_iterL(matrices, &aux_l, &b);
-        next_iterR(matrices, &aux_r, &b);
+        next_iter_l(matrices, &aux_l, &b);
+        next_iter_r(matrices, &aux_r, &b);
         swap(&matrices->l, &aux_l);
         swap(&matrices->r, &aux_r);
     }
