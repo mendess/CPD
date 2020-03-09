@@ -38,11 +38,7 @@ MatrixIterMut matrix_iter_row_mut(Matrix* m, size_t row);
 
 MatrixIterMut matrix_iter_full_mut(Matrix* m);
 
-Matrix matrix_b(Matrix const *L, Matrix const *R);
-
 void random_fill_LR(size_t nF, Matrix* l, Matrix* r);
-
-Matrix matrix_b(Matrix const *L, Matrix const *R);
 
 typedef struct Matrixes {
     size_t num_iterations;
@@ -51,4 +47,7 @@ typedef struct Matrixes {
     Matrix l;
     Matrix r;
 } Matrixes;
+
+void matrixes_free(Matrixes* m);
+
 #endif // MATRIX_H
