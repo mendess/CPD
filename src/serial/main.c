@@ -1,3 +1,4 @@
+#include "matFact.h"
 #include "parser.h"
 
 #include <stdio.h>
@@ -8,8 +9,8 @@ int main(int argc, char const** argv) {
         fprintf(stderr, "Usage: %s [filename]\n", argv[0]);
         return EXIT_FAILURE;
     }
-    Matrixes matrixes;
-    ParserError error = parse_file(argv[1], &matrixes);
+    Matrices matrices;
+    ParserError error = parse_file(argv[1], &matrices);
     switch (error) {
         case PARSER_ERROR_IO:
             fputs("IO Error\n", stderr);
@@ -21,9 +22,9 @@ int main(int argc, char const** argv) {
             break;
     }
 
-    matrix_print(&matrixes.a);
-    matrix_print(&matrixes.l);
-    matrix_print(&matrixes.r);
-
+    puts("After first iteration \n");
+    Matrix b = iter(&matrices);
+    matrix_print(&b);
+    matrices_free(&matrices);
     return EXIT_SUCCESS;
 }
