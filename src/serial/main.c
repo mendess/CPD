@@ -32,9 +32,13 @@ int main(int argc, char const** argv) {
     matrix_print(&matrixes.r);
 
     matrix_b(&matrixes.l, &matrixes.r);
-    next_iter(&matrixes.a, &matrixes.l, &matrixes.r, matrixes.alpha);
 
     puts("After first iteration \n");
+    iter(&matrixes);
+    matrix_print(&matrixes.l);
+    matrix_print(&matrixes.r);
+
+/*
     puts("Matrix A\n\n");
     matrix_print(&matrixes.a);
     puts("==========================================");
@@ -43,6 +47,7 @@ int main(int argc, char const** argv) {
     puts("==========================================");
     puts("Matrix R\n\n");
     matrix_print(&matrixes.r);
+    */
 
     return EXIT_SUCCESS;
 }

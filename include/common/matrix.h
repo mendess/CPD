@@ -43,4 +43,12 @@ Matrix matrix_b(Matrix const *L, Matrix const *R);
 void random_fill_LR(size_t nF, Matrix* l, Matrix* r);
 
 Matrix matrix_b(Matrix const *L, Matrix const *R);
+
+typedef struct Matrixes {
+    size_t num_iterations;
+    double alpha;
+    Matrix a;
+    Matrix l;
+    Matrix r;
+} Matrixes;
 #endif // MATRIX_H

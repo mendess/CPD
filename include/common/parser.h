@@ -4,14 +4,6 @@
 
 #include <stddef.h>
 
-typedef struct Matrixes {
-    size_t num_iterations;
-    double alpha;
-    Matrix a;
-    Matrix l;
-    Matrix r;
-} Matrixes;
-
 typedef enum ParserError {
     PARSER_ERROR_OK,
     PARSER_ERROR_IO,
