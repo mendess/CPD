@@ -40,6 +40,8 @@ MatrixIterMut matrix_iter_full_mut(Matrix* m);
 
 void random_fill_LR(size_t nF, Matrix* l, Matrix* r);
 
+void matrix_clear(Matrix* m);
+
 typedef struct Matrices {
     size_t num_iterations;
     double alpha;

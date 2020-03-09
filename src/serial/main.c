@@ -22,31 +22,9 @@ int main(int argc, char const** argv) {
             break;
     }
 
-    puts("Matrix A\n");
-    matrix_print(&matrices.a);
-    puts("==========================================");
-    puts("Matrix L\n");
-    matrix_print(&matrices.l);
-    puts("==========================================");
-    puts("Matrix R\n");
-    matrix_print(&matrices.r);
-
     puts("After first iteration \n");
-    iter(&matrices);
-    matrix_print(&matrices.l);
-    matrix_print(&matrices.r);
-
-    /*
-        puts("Matrix A\n\n");
-        matrix_print(&matrices.a);
-        puts("==========================================");
-        puts("Matrix L\n\n");
-        matrix_print(&matrices.l);
-        puts("==========================================");
-        puts("Matrix R\n\n");
-        matrix_print(&matrices.r);
-        */
-
+    Matrix b = iter(&matrices);
+    matrix_print(&b);
     matrices_free(&matrices);
     return EXIT_SUCCESS;
 }

@@ -2,6 +2,6 @@
 #define MATFACT_H
 #include "matrix.h"
 
-void iter(Matrices*);
+Matrix iter(Matrices*);
 
 #endif

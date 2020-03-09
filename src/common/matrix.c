@@ -64,7 +64,7 @@ MatrixIterMut matrix_iter_full_mut(Matrix* const m) {
 void matrix_print(Matrix const* m) {
     for (size_t r = 0; r < m->rows; r++) {
         for (MatrixIter i = matrix_iter_row(m, r); i.iter != i.end; ++i.iter) {
-            printf("%.6lf   ", *i.iter);
+            printf("%.6lf ", *i.iter);
         }
         putchar('\n');
     }
@@ -80,6 +80,10 @@ void random_fill_LR(size_t const nF, Matrix* const l, Matrix* const r) {
     for (MatrixIterMut i = matrix_iter_full_mut(r); i.iter != i.end; ++i.iter) {
         *i.iter = RAND01 / (double) nF;
     }
+}
+
+void matrix_clear(Matrix* m) {
+    memset(m->data, 0, m->rows * m->columns * sizeof(double));
 }
 
 void matrices_free(Matrices* m) {
