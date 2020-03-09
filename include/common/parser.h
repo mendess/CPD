@@ -10,6 +10,6 @@ typedef enum ParserError {
     PARSER_ERROR_INVALID_FORMAT,
 } ParserError;
 
-ParserError parse_file(char const* filename, Matrixes* matrixes);
+ParserError parse_file(char const* filename, Matrices* matrices);
 
 #endif // PARSER_H

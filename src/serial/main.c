@@ -9,8 +9,8 @@ int main(int argc, char const** argv) {
         fprintf(stderr, "Usage: %s [filename]\n", argv[0]);
         return EXIT_FAILURE;
     }
-    Matrixes matrixes;
-    ParserError error = parse_file(argv[1], &matrixes);
+    Matrices matrices;
+    ParserError error = parse_file(argv[1], &matrices);
     switch (error) {
         case PARSER_ERROR_IO:
             fputs("IO Error\n", stderr);
@@ -23,30 +23,30 @@ int main(int argc, char const** argv) {
     }
 
     puts("Matrix A\n");
-    matrix_print(&matrixes.a);
+    matrix_print(&matrices.a);
     puts("==========================================");
     puts("Matrix L\n");
-    matrix_print(&matrixes.l);
+    matrix_print(&matrices.l);
     puts("==========================================");
     puts("Matrix R\n");
-    matrix_print(&matrixes.r);
+    matrix_print(&matrices.r);
 
     puts("After first iteration \n");
-    iter(&matrixes);
-    matrix_print(&matrixes.l);
-    matrix_print(&matrixes.r);
+    iter(&matrices);
+    matrix_print(&matrices.l);
+    matrix_print(&matrices.r);
 
     /*
         puts("Matrix A\n\n");
-        matrix_print(&matrixes.a);
+        matrix_print(&matrices.a);
         puts("==========================================");
         puts("Matrix L\n\n");
-        matrix_print(&matrixes.l);
+        matrix_print(&matrices.l);
         puts("==========================================");
         puts("Matrix R\n\n");
-        matrix_print(&matrixes.r);
+        matrix_print(&matrices.r);
         */
 
-    matrixes_free(&matrixes);
+    matrices_free(&matrices);
     return EXIT_SUCCESS;
 }

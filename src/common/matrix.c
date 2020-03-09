@@ -82,7 +82,7 @@ void random_fill_LR(size_t const nF, Matrix* const l, Matrix* const r) {
     }
 }
 
-void matrixes_free(Matrixes* m) {
+void matrices_free(Matrices* m) {
     matrix_free(&m->a);
     matrix_free(&m->l);
     matrix_free(&m->r);

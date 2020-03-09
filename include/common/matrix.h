@@ -40,14 +40,14 @@ MatrixIterMut matrix_iter_full_mut(Matrix* m);
 
 void random_fill_LR(size_t nF, Matrix* l, Matrix* r);
 
-typedef struct Matrixes {
+typedef struct Matrices {
     size_t num_iterations;
     double alpha;
     Matrix a;
     Matrix l;
     Matrix r;
-} Matrixes;
+} Matrices;
 
-void matrixes_free(Matrixes* m);
+void matrices_free(Matrices* m);
 
 #endif // MATRIX_H

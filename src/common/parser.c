@@ -135,7 +135,7 @@ ParserError parse_matrix_a(
     return PARSER_ERROR_OK;
 }
 
-ParserError parse_file(char const* const filename, Matrixes* const matrixes) {
+ParserError parse_file(char const* const filename, Matrices* const matrices) {
     char* contents = read_file(filename);
     if (contents == NULL) return PARSER_ERROR_IO;
     StrIter content_iter = {.str = contents};
@@ -157,7 +157,7 @@ ParserError parse_file(char const* const filename, Matrixes* const matrixes) {
     Matrix l = matrix_make(header.users, header.features);
     Matrix r = matrix_make(header.features, header.items);
     random_fill_LR(header.features, &l, &r);
-    *matrixes = (Matrixes){
+    *matrices = (Matrices){
         .num_iterations = header.num_iterations,
         .alpha = header.alpha,
         .a = a,
