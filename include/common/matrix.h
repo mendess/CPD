@@ -52,4 +52,6 @@ typedef struct Matrices {
 
 void matrices_free(Matrices* m);
 
+void print_output(Matrices const* const matrices, Matrix const* const b);
+
 #endif // MATRIX_H
