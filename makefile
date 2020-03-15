@@ -36,7 +36,7 @@ OBJ_RELEASE_OPENMP = $(foreach o, $(patsubst $(SOURCES_OPENMP_DIR)/%.c, %.o, $(S
 OBJ_RELEASE_MPI    = $(foreach o, $(patsubst $(SOURCES_MPI_DIR)/%.c, %.o, $(SOURCES_MPI)), $(RELEASE_DIR_MPI)/$o)
 
 DFLAGS = -g -O0 -DDEBUG
-RFLAGS = -O2 -march=native
+RFLAGS = -O2 -march=native -DNDEBUG
 
 override CFLAGS += -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla
 PROG = recomender

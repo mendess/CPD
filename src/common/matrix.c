@@ -1,6 +1,6 @@
 #include "matrix.h"
 
-#define _DEFAULT_SOURCE
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,15 +22,6 @@ Matrix matrix_clone(Matrix const* const other) {
     memcpy(
         new_m.data, other->data, sizeof(double) * new_m.rows * new_m.columns);
     return new_m;
-}
-
-double const*
-matrix_at(Matrix const* const m, size_t const row, size_t const column) {
-    return m->data + (row * m->columns + column);
-}
-
-double* matrix_at_mut(Matrix* const m, size_t const row, size_t const column) {
-    return m->data + (row * m->columns + column);
 }
 
 void matrix_free(Matrix* m) {
