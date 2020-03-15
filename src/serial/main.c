@@ -25,22 +25,8 @@ int main(int argc, char const** argv) {
     puts("After first iteration \n");
     Matrix b = iter(&matrices);
     // matrix_print(&b);
-    double max;
-    size_t max_pos;
-    for (size_t row = 0; row < matrices.a.rows; row++) {
-        max = 0;
-        max_pos = 0;
-        for (size_t column = 0; column < matrices.a.columns; column++) {
-            if (*matrix_at(&matrices.a, row, column) == 0) {
-                double aux = *matrix_at(&b, row, column);
-                if (aux > max) {
-                    max = aux;
-                    max_pos = column;
-                }
-            }
-        }
-        printf("%ld\n", max_pos);
-    }
+    print_output(&matrices, &b);
     matrices_free(&matrices);
     return EXIT_SUCCESS;
 }
+
