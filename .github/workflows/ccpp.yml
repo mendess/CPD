@@ -17,3 +17,5 @@ jobs:
       run: make clean && make CFLAGS+=-Werror
     - name: release_build
       run: make clean && make release CFLAGS+=-Werror
+    - name: tests
+      run: make test

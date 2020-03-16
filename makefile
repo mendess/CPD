@@ -88,6 +88,9 @@ $(RELEASE_DIR_OPENMP)/%.o: $(SOURCES_OPENMP) $(SOURCES_COMMON)
 $(RELEASE_DIR_MPI)/%.o: $(SOURCES_MPI) $(SOURCES_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_MPI)/%, $(SOURCES_MPI_DIR)/%, $@))       $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI) -c -o $@
 
+test:
+	./run_tests.sh
+
 clean:
 	rm -rf $(BUILD_DIR)
 
