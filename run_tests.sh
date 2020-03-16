@@ -5,13 +5,13 @@ binary="$(grep '^PROG = ' makefile | cut -d'=' -f2 | sed -r 's/ //g')"
 test_targets=(serial)
 make
 make release
-find instances/ -type f |
-    sed -r 's/\.[^.]+$//g' |
-    sort |
-    uniq |
-    while read -r file; do
-        for target in "${test_targets[@]}"; do
-            for mode in debug release; do
+for mode in debug release; do
+    find instances/ -type f |
+        sed -r 's/\.[^.]+$//g' |
+        sort -V |
+        uniq |
+        while read -r file; do
+            for target in "${test_targets[@]}"; do
                 echo '===============================>'
                 echo -e "\e[34mRunning test\e[0m"
                 echo -e "\tTarget: $target"
@@ -25,4 +25,4 @@ find instances/ -type f |
                 fi
             done
         done
-    done
+done
