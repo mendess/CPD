@@ -12,7 +12,8 @@ find instances/ -type f |
     while read -r file; do
         for target in "${test_targets[@]}"; do
             for mode in debug release; do
-                echo "Running test"
+                echo '===============================>'
+                echo -e "\e[34mRunning test\e[0m"
                 echo -e "\tTarget: $target"
                 echo -e "\tMode: $mode"
                 echo -e "\tFile: $file"
