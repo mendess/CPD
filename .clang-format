@@ -6,14 +6,14 @@ AlignEscapedNewlines: Left
 AlignOperands: 'true'
 AlignTrailingComments: 'true'
 AllowAllParametersOfDeclarationOnNextLine: 'true'
-AllowShortBlocksOnASingleLine: 'true'
+AllowShortBlocksOnASingleLine: 'false'
 AllowShortCaseLabelsOnASingleLine: 'false'
 AllowShortIfStatementsOnASingleLine: 'true'
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortLoopsOnASingleLine: 'true'
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: 'false'
-#AlwaysBreakTemplateDeclarations: 'Yes'
+AlwaysBreakTemplateDeclarations: 'Yes'
 BinPackArguments: 'false'
 BinPackParameters: 'false'
 BreakAfterJavaFieldAnnotations: 'true'
