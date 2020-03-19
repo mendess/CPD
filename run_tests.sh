@@ -21,6 +21,8 @@ for mode in debug release; do
                 answer="$(cat "$file.out")"
                 if [[ "$output" != "$answer" ]]; then
                     echo -e "\e[31mTest failed\e[0m"
+                    echo -e "Expected\n$answer"
+                    echo -e "Got\n$output"
                     exit 1
                 fi
             done

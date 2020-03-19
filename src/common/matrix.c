@@ -55,9 +55,9 @@ MatrixIterMut matrix_iter_full_mut(Matrix* const m) {
 void matrix_print(Matrix const* m) {
     for (size_t r = 0; r < m->rows; r++) {
         for (MatrixIter i = matrix_iter_row(m, r); i.iter != i.end; ++i.iter) {
-            printf("%.6lf ", *i.iter);
+            fprintf(stderr, "%.6lf ", *i.iter);
         }
-        putchar('\n');
+        fputc('\n', stderr);
     }
 }
 
@@ -78,7 +78,8 @@ void matrix_clear(Matrix* m) {
 }
 
 void matrices_free(Matrices* m) {
-    matrix_free(&m->a);
+    cmatrix_free(&m->a_prime);
+    cmatrix_free(&m->a_prime_transpose);
     matrix_free(&m->l);
     matrix_free(&m->r);
 }
@@ -86,11 +87,11 @@ void matrices_free(Matrices* m) {
 void print_output(Matrices const* const matrices, Matrix const* const b) {
     double max;
     size_t max_pos;
-    for (size_t row = 0; row < matrices->a.rows; row++) {
+    for (size_t row = 0; row < matrices->a_prime.n_rows; row++) {
         max = 0;
         max_pos = 0;
-        for (size_t column = 0; column < matrices->a.columns; column++) {
-            if (*matrix_at(&(matrices->a), row, column) == 0) {
+        for (size_t column = 0; column < matrices->a_prime.n_cols; column++) {
+            if (*cmatrix_at(&(matrices->a_prime), row, column) == 0) {
                 double aux = *matrix_at(b, row, column);
                 if (aux > max) {
                     max = aux;

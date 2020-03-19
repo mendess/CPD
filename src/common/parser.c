@@ -1,5 +1,7 @@
 #include "parser.h"
 
+#include "compact_matrix.h"
+
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -93,7 +95,10 @@ ParserError parse_header(StrIter* const iter, Header* const p) {
 }
 
 ParserError parse_matrix_a(
-    StrIter* const iter, size_t const non_zero_elems, Matrix* const a) {
+    StrIter* const iter,
+    size_t const non_zero_elems,
+    CompactMatrix* const a_prime,
+    CompactMatrix* const a_prime2) {
     size_t row, column;
     double value;
     size_t n_lines = 0;
@@ -102,14 +107,14 @@ ParserError parse_matrix_a(
 #ifdef DEBUG
         fprintf(stderr, "line %zu: %zu %zu %lf\n", n_lines, row, column, value);
 #endif
-        if (row >= a->rows || column >= a->columns) {
+        if (row >= a_prime->n_rows || column >= a_prime->n_cols) {
             fprintf(
                 stderr,
                 "Invalid row or column values at line %zu."
                 " Max (%zu, %zu), got (%zu, %zu)\n",
                 n_lines,
-                a->rows,
-                a->columns,
+                a_prime->n_rows,
+                a_prime->n_cols,
                 row,
                 column);
             return PARSER_ERROR_INVALID_FORMAT;
@@ -124,7 +129,8 @@ ParserError parse_matrix_a(
                 value);
             return PARSER_ERROR_INVALID_FORMAT;
         }
-        *matrix_at_mut(a, row, column) = value;
+        cmatrix_add(a_prime, row, column, value);
+        cmatrix_add(a_prime2, column, row, value);
     }
 
     if (n_lines < non_zero_elems) {
@@ -147,11 +153,16 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
         return error;
     }
 
-    Matrix a = matrix_make(header.users, header.items);
-    error = parse_matrix_a(&content_iter, header.non_zero_elems, &a);
+    CompactMatrix a_prime =
+        cmatrix_make(header.users, header.items, header.non_zero_elems);
+    CompactMatrix a_prime_transpose =
+        cmatrix_make(header.items, header.users, header.non_zero_elems);
+    error = parse_matrix_a(
+        &content_iter, header.non_zero_elems, &a_prime, &a_prime_transpose);
     free(contents);
     if (error != PARSER_ERROR_OK) {
-        matrix_free(&a);
+        cmatrix_free(&a_prime);
+        cmatrix_free(&a_prime_transpose);
         return error;
     }
     Matrix l = matrix_make(header.users, header.features);
@@ -160,9 +171,10 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
     *matrices = (Matrices){
         .num_iterations = header.num_iterations,
         .alpha = header.alpha,
-        .a = a,
         .l = l,
         .r = r,
+        .a_prime = a_prime,
+        .a_prime_transpose = a_prime_transpose,
     };
     return PARSER_ERROR_OK;
 }
