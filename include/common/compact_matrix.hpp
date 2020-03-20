@@ -2,6 +2,7 @@
 #define COMPACT_MATRIX_H
 
 #include <cassert>
+#include <iostream>
 #include <tuple>
 #include <vector>
 
@@ -44,6 +45,7 @@ struct CompactMatrix {
 
     struct Iter;
     struct RowIter;
+    struct NNIndexes;
 
   public:
     CompactMatrix(
@@ -99,6 +101,10 @@ struct CompactMatrix {
         return RowIter{*this, row};
     }
 
+    auto non_null_indexes() const noexcept -> NNIndexes {
+        return NNIndexes{*this};
+    }
+
     auto friend operator<<(std::ostream& os, CompactMatrix const& m)
         -> std::ostream&;
 
@@ -137,7 +143,7 @@ struct CompactMatrix {
         std::vector<size_t>::const_iterator _columns;
 
       public:
-        RowIter(CompactMatrix const& m, size_t row)
+        RowIter(CompactMatrix const& m, size_t row) noexcept
             : _values(m._values.begin() + m._rows[row]),
               _end(m._values.begin() + m._rows[row + 1]),
               _columns(m._columns.begin() + m._rows[row]) {}
@@ -153,6 +159,30 @@ struct CompactMatrix {
         }
 
         auto has_next() const noexcept -> bool { return _values != _end; }
+    };
+
+    struct NNIndexes {
+        std::vector<size_t> const& _cols;
+        std::vector<size_t> const& _rows;
+        size_t _cols_idx;
+        size_t _rows_idx;
+
+        NNIndexes(CompactMatrix const& m) noexcept
+            : _cols(m._columns), _rows(m._rows), _cols_idx(0), _rows_idx(0) {}
+
+        auto operator++() noexcept -> NNIndexes& {
+            ++_cols_idx;
+            while (_cols_idx == _rows[_rows_idx + 1]) ++_rows_idx;
+            return *this;
+        }
+
+        auto operator*() noexcept -> std::pair<size_t, size_t> {
+            return std::pair(_rows_idx, _cols[_cols_idx]);
+        }
+
+        auto has_next() const noexcept -> bool {
+            return _rows.size() - 1 > _rows_idx;
+        }
     };
 };
 } // namespace matrix

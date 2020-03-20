@@ -36,7 +36,7 @@ OBJ_RELEASE_OPENMP = $(foreach o, $(patsubst $(SOURCES_OPENMP_DIR)/%.cpp, %.o, $
 OBJ_RELEASE_MPI    = $(foreach o, $(patsubst $(SOURCES_MPI_DIR)/%.cpp, %.o, $(SOURCES_MPI)), $(RELEASE_DIR_MPI)/$o)
 
 ifndef DFLAGS
-	DFLAGS = -Og -DDEBUG
+	DFLAGS = -O0 -g -DDEBUG
 endif
 RFLAGS = -O2 -march=native -DNDEBUG
 

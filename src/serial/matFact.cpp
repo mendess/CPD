@@ -14,13 +14,29 @@ namespace factorization {
 /*     return 2 * (a - b) * (-lr); */
 /* } */
 
-void matrix_b(Matrix const& l, Matrix const& r, Matrix& matrix) {
+void matrix_b(
+    Matrix const& l, Matrix const& r, Matrix& matrix, CompactMatrix const& a) {
+    for (auto indexes = a.non_null_indexes(); indexes.has_next(); ++indexes) {
+        auto const& [i, j] = *indexes;
+
+        auto bij = matrix[std::pair(i, j)];
+        for (size_t k = 0; k < l.n_columns(); ++k) {
+            bij += l[std::pair(i, k)] * r[std::pair(k, j)];
+        }
+
+        matrix[std::pair(i, j)] = bij;
+    }
+}
+
+void matrix_b_full(Matrix const& l, Matrix const& r, Matrix& matrix) {
     for (size_t i = 0; i < l.n_rows(); i++) {
         for (size_t j = 0; j < r.n_columns(); ++j) {
+            auto bij = matrix[std::pair(i, j)];
             for (size_t k = 0; k < l.n_columns(); ++k) {
-                matrix[std::pair(i, j)] +=
-                    l[std::pair(i, k)] * r[std::pair(k, j)];
+                bij += l[std::pair(i, k)] * r[std::pair(k, j)];
             }
+
+            matrix[std::pair(i, j)] = bij;
         }
     }
 }
@@ -63,12 +79,13 @@ auto iter(Matrices& matrices) -> Matrix {
     auto b = Matrix(matrices.a.n_rows(), matrices.a.n_columns());
     for (size_t i = 0; i < matrices.num_iterations; i++) {
         if (i != 0) b.clear(); // TODO: benchmark
-        matrix_b(matrices.l, matrices.r, b);
+        matrix_b(matrices.l, matrices.r, b, matrices.a);
         next_iter_l(matrices, aux_l, b);
         next_iter_r(matrices, aux_r, b);
         std::swap(matrices.l, aux_l);
         std::swap(matrices.r, aux_r);
     }
+    matrix_b_full(matrices.l, matrices.r, b);
     return b;
 }
 } // namespace factorization
