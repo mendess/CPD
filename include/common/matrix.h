@@ -1,6 +1,8 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 #define _DEFAULT_SOURCE
+#include "compact_matrix.h"
+
 #include <assert.h>
 #include <stddef.h>
 
@@ -55,7 +57,8 @@ void matrix_clear(Matrix* m);
 typedef struct Matrices {
     size_t num_iterations;
     double alpha;
-    Matrix a;
+    CompactMatrix a_prime;
+    CompactMatrix a_prime_transpose;
     Matrix l;
     Matrix r;
 } Matrices;
