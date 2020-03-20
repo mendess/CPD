@@ -3,7 +3,7 @@
 set -e
 binary="$(grep '^PROG = ' makefile | cut -d'=' -f2 | sed -r 's/ //g')"
 test_targets=(serial)
-make
+make DFLAGS=-O0 DFLAGS+=-DDEBUG
 make release
 for mode in debug release; do
     find instances/ -type f |

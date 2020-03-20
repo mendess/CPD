@@ -32,12 +32,15 @@ namespace matrix {
 // ]
 // Changing is hard
 struct CompactMatrix {
+    using IteratorMut = std::vector<double>::iterator;
+    using Iterator = std::vector<double>::const_iterator;
+
   private:
     std::vector<double> _values;
     std::vector<size_t> _columns;
     std::vector<size_t> _rows;
-    size_t const _n_rows;
-    size_t const _n_cols;
+    size_t _n_rows;
+    size_t _n_cols;
 
     struct Iter;
     struct RowIter;
@@ -51,11 +54,17 @@ struct CompactMatrix {
         _rows.resize(rows + 1);
     }
 
-    constexpr auto n_columns() const noexcept -> size_t { return _n_cols; }
+    auto constexpr n_columns() const noexcept -> size_t { return _n_cols; }
 
-    constexpr auto n_rows() const noexcept -> size_t { return _n_rows; }
+    auto constexpr n_rows() const noexcept -> size_t { return _n_rows; }
 
     explicit CompactMatrix(CompactMatrix const&) = default;
+
+    CompactMatrix(CompactMatrix&&) = default;
+
+    auto operator=(CompactMatrix const&) -> CompactMatrix& = delete;
+
+    auto operator=(CompactMatrix &&) -> CompactMatrix& = default;
 
     auto operator[](std::pair<size_t, size_t> i) const noexcept
         -> double const& {
@@ -84,7 +93,7 @@ struct CompactMatrix {
         }
     }
 
-    constexpr auto iter() noexcept -> Iter { return Iter{*this}; }
+    auto constexpr iter() const noexcept -> Iter { return Iter{*this}; }
 
     auto row(size_t row) const noexcept -> RowIter {
         return RowIter{*this, row};
@@ -104,28 +113,27 @@ struct CompactMatrix {
         constexpr Iter(CompactMatrix const& m) noexcept
             : _m(m), _column_idx(0), _row_idx(0) {}
 
-        constexpr auto operator++() noexcept -> Iter {
-            while (_row_idx == _column_idx) {
+        auto operator++() noexcept -> Iter& {
+            while (_m._rows[_row_idx] == _column_idx) {
                 ++_row_idx;
             }
             ++_column_idx;
             return *this;
         }
 
-        auto operator*() const noexcept
-            -> std::tuple<double const&, size_t, size_t> {
+        auto operator*() const noexcept -> std::tuple<double, size_t, size_t> {
             return {_m._values[_column_idx], _row_idx, _column_idx};
         }
 
-        constexpr auto has_next() const noexcept -> bool {
+        auto constexpr has_next() const noexcept -> bool {
             return _m._n_rows >= _row_idx;
         }
     };
 
     struct RowIter {
       private:
-        std::vector<double>::const_iterator _values;
-        std::vector<double>::const_iterator const _end;
+        Iterator _values;
+        Iterator const _end;
         std::vector<size_t>::const_iterator _columns;
 
       public:
@@ -134,13 +142,13 @@ struct CompactMatrix {
               _end(m._values.begin() + m._rows[row + 1]),
               _columns(m._columns.begin() + m._rows[row]) {}
 
-        auto operator++() noexcept -> RowIter {
+        auto operator++() noexcept -> RowIter& {
             ++_values;
             ++_columns;
             return *this;
         }
 
-        auto operator*() const noexcept -> std::pair<double, size_t> {
+        auto operator*() const noexcept -> std::pair<double const, size_t> {
             return std::pair{*_values, *_columns};
         }
 

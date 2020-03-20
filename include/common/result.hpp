@@ -28,19 +28,19 @@ class Result {
 
     constexpr Result(const Result<T, E>&) = default;
 
-    constexpr auto operator=(const Result<T, E>&) -> Result<T, E>& = default;
-
     constexpr Result(Result<T, E>&&) = default;
 
-    constexpr auto operator=(Result<T, E> &&) -> Result<T, E>& = default;
+    auto constexpr operator=(const Result<T, E>&) -> Result<T, E>& = default;
 
-    constexpr auto is_ok() const noexcept -> bool { return inner.index() == 0; }
+    auto constexpr operator=(Result<T, E> &&) -> Result<T, E>& = default;
 
-    constexpr auto is_err() const noexcept -> bool {
+    auto constexpr is_ok() const noexcept -> bool { return inner.index() == 0; }
+
+    auto constexpr is_err() const noexcept -> bool {
         return inner.index() == 1;
     }
 
-    constexpr auto ok() && -> std::optional<T> {
+    auto constexpr ok() && -> std::optional<T> {
         if (is_ok()) {
             return {std::get<0>(inner)};
         } else {
@@ -48,7 +48,7 @@ class Result {
         }
     }
 
-    constexpr auto err() && -> std::optional<E> {
+    auto constexpr err() && -> std::optional<E> {
         if (is_err()) {
             return {std::get<1>(inner)};
         } else {
@@ -56,7 +56,7 @@ class Result {
         }
     }
 
-    constexpr auto as_ref() const noexcept -> Result<T const*, E const*> {
+    auto constexpr as_ref() const noexcept -> Result<T const*, E const*> {
         if (is_ok()) {
             return Result<T const*, E const*>::Ok(&std::get<0>(inner));
         } else {
@@ -64,7 +64,7 @@ class Result {
         }
     }
 
-    constexpr auto as_mut() noexcept -> Result<T*, E*> {
+    auto constexpr as_mut() noexcept -> Result<T*, E*> {
         if (is_ok()) {
             return Result<T*, E*>::Ok(&std::get<0>(inner));
         } else {
@@ -73,7 +73,7 @@ class Result {
     }
 
     template<typename U, typename M> // M: T -> U
-        constexpr auto map(M mapper) && noexcept -> Result<U, E> {
+        auto constexpr map(M mapper) && noexcept -> Result<U, E> {
         if (is_ok()) {
             return Result<U, E>::Ok(
                 mapper(std::forward<T>(std::get<0>(inner))));
@@ -83,7 +83,7 @@ class Result {
     }
 
     template<typename U, typename M, typename F> // M: T -> U; F: E -> U
-        constexpr auto map_or_else(F fallback, M mapper) && noexcept -> U {
+        auto constexpr map_or_else(F fallback, M mapper) && noexcept -> U {
         if (is_ok()) {
             return mapper(std::get<0>(inner));
         } else {
@@ -92,7 +92,7 @@ class Result {
     }
 
     template<typename F, typename O>
-        constexpr auto map_err(O op) && noexcept -> Result<T, F> {
+        auto constexpr map_err(O op) && noexcept -> Result<T, F> {
         if (is_ok()) {
             return Result<T, F>::Ok(std::forward<T>(std::get<0>(this->inner)));
         } else {
@@ -100,9 +100,9 @@ class Result {
         }
     }
 
-    constexpr auto unwrap() && -> T { return std::move(std::get<0>(inner)); }
+    auto constexpr unwrap() && -> T { return std::move(std::get<0>(inner)); }
 
-    constexpr auto unwrap_or(T&& optb) && noexcept -> T {
+    auto constexpr unwrap_or(T&& optb) && noexcept -> T {
         if (is_ok()) {
             return std::get<0>(inner);
         } else {
@@ -111,7 +111,7 @@ class Result {
     }
 
     template<typename F>
-        constexpr auto unwrap_or_else(F op) && noexcept -> T {
+        auto constexpr unwrap_or_else(F op) && noexcept -> T {
         if (is_ok()) {
             return std::get<0>(inner);
         } else {
@@ -119,7 +119,9 @@ class Result {
         }
     }
 
-    constexpr auto unwrap_err() && -> E { return std::get<1>(inner); }
+    auto constexpr unwrap_err() && -> E {
+        return std::move(std::get<1>(inner));
+    }
 
     auto expect(const std::string& msg) && -> T {
         try {
@@ -137,7 +139,7 @@ class Result {
         }
     }
 
-    constexpr auto unwrap_or_default() && noexcept -> T {
+    auto constexpr unwrap_or_default() && noexcept -> T {
         if (is_ok()) {
             return std::get<0>(inner);
         } else {
@@ -146,7 +148,7 @@ class Result {
     }
 
     template<typename U>
-        constexpr auto andd(Result<U, E> res) && noexcept -> Result<U, E> {
+        auto constexpr andd(Result<U, E> res) && noexcept -> Result<U, E> {
         if (is_ok()) {
             return res;
         } else {
@@ -155,7 +157,7 @@ class Result {
     }
 
     template<typename U, typename M> // M: T -> Result<U, E>
-        constexpr auto and_then(M mapper) && noexcept -> Result<U, E> {
+        auto constexpr and_then(M mapper) && noexcept -> Result<U, E> {
         if (is_ok()) {
             return mapper(std::get<0>(inner));
         } else {
@@ -164,7 +166,7 @@ class Result {
     }
 
     template<typename F>
-        constexpr auto orr(Result<T, F> res) && noexcept -> Result<T, F> {
+        auto constexpr orr(Result<T, F> res) && noexcept -> Result<T, F> {
         if (is_ok()) {
             return Result<T, F>::Ok(std::move(std::get<0>(inner)));
         } else {
@@ -173,7 +175,7 @@ class Result {
     }
 
     template<typename F, typename O> // O: E -> Result<T, F>
-        constexpr auto or_else(O op) && noexcept -> Result<T, F> {
+        auto constexpr or_else(O op) && noexcept -> Result<T, F> {
         if (is_ok()) {
             return Result<T, F>::Ok(std::move(std::get<0>(inner)));
         } else {
@@ -181,27 +183,27 @@ class Result {
         }
     }
 
-    constexpr auto operator==(const Result<T, E>& other) noexcept -> bool {
+    auto constexpr operator==(const Result<T, E>& other) noexcept -> bool {
         return inner == other.inner;
     }
 
-    constexpr auto operator!=(const Result<T, E>& other) noexcept -> bool {
+    auto constexpr operator!=(const Result<T, E>& other) noexcept -> bool {
         return inner != other.inner;
     }
 
-    constexpr auto operator<(const Result<T, E>& other) noexcept -> bool {
+    auto constexpr operator<(const Result<T, E>& other) noexcept -> bool {
         return inner < other.inner;
     }
 
-    constexpr auto operator>(const Result<T, E>& other) noexcept -> bool {
+    auto constexpr operator>(const Result<T, E>& other) noexcept -> bool {
         return inner > other.inner;
     }
 
-    constexpr auto operator<=(const Result<T, E>& other) noexcept -> bool {
+    auto constexpr operator<=(const Result<T, E>& other) noexcept -> bool {
         return inner <= other.inner;
     }
 
-    constexpr auto operator>=(const Result<T, E>& other) noexcept -> bool {
+    auto constexpr operator>=(const Result<T, E>& other) noexcept -> bool {
         return inner >= other.inner;
     }
 

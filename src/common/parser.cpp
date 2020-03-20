@@ -2,7 +2,6 @@
 
 #include "compact_matrix.hpp"
 #include "result.hpp"
-using namespace result;
 
 #include <cstdio>
 #include <fstream>
@@ -10,6 +9,9 @@ using namespace result;
 #include <string>
 
 namespace parser {
+using namespace result;
+using namespace matrix;
+
 struct StrIter {
   private:
     char const* _str;
@@ -71,22 +73,22 @@ auto scan_line(StrIter& s_iter, char const* const format, Args... args) -> int {
 auto parse_header(StrIter& iter) -> Result<Header, ParserError> {
     size_t num_iterations = 0;
     if (scan_line(iter, "%zu\n", &num_iterations) != 1) {
-        fputs("Failed to get number of iterations\n", stderr);
+        std::cerr << "Failed to get number of iterations\n";
         return ParserError::INVALID_FORMAT;
     }
     double alpha;
     if (scan_line(iter, "%lf", &alpha) != 1) {
-        fputs("Failed to get alpha\n", stderr);
+        std::cerr << "Failed to get alpha\n";
         return ParserError::INVALID_FORMAT;
     }
     size_t features;
     if (scan_line(iter, "%zu", &features) != 1) {
-        fputs("Failed to get number of features\n", stderr);
+        std::cerr << "Failed to get number of features\n";
         return ParserError::INVALID_FORMAT;
     }
     size_t users, items, non_zero_elems;
     if (scan_line(iter, "%zu %zu %zu", &users, &items, &non_zero_elems) != 3) {
-        fputs("Failed to get matrix A information\n", stderr);
+        std::cerr << "Failed to get matrix A information\n";
         return ParserError::INVALID_FORMAT;
     }
     return Header{
@@ -99,15 +101,15 @@ auto parse_header(StrIter& iter) -> Result<Header, ParserError> {
     };
 }
 
-using CMatrices = std::pair<matrix::CompactMatrix, matrix::CompactMatrix>;
+using CMatrices = std::pair<CompactMatrix, CompactMatrix>;
 
 auto parse_matrix_a(
     StrIter& iter,
     size_t const non_zero_elems,
     size_t const rows,
     size_t const columns) -> Result<CMatrices, ParserError> {
-    auto a = matrix::CompactMatrix(rows, columns, non_zero_elems);
-    auto a_transpose = matrix::CompactMatrix(columns, rows, non_zero_elems);
+    auto a = CompactMatrix(rows, columns, non_zero_elems);
+    auto a_transpose = CompactMatrix(columns, rows, non_zero_elems);
     size_t row, column;
     double value;
     size_t n_lines = 0;
@@ -138,12 +140,11 @@ auto parse_matrix_a(
     return CMatrices(a, a_transpose);
 }
 
-auto parse(char const* filename)
-    -> result::Result<matrix::Matrices, ParserError> {
+auto parse(char const* filename) -> Result<Matrices, ParserError> {
     auto contents = read_file(filename);
     if (!contents) return ParserError::IO;
-    auto content_iter = StrIter{*contents};
 
+    auto content_iter = StrIter{*contents};
     auto maybe_header = parse_header(content_iter);
     if (maybe_header.is_err()) {
         return std::move(maybe_header).unwrap_err();
@@ -152,18 +153,20 @@ auto parse(char const* filename)
 
     auto maybe_matrices = parse_matrix_a(
         content_iter, header.non_zero_elems, header.users, header.items);
+
     if (maybe_matrices.is_err()) {
         return std::move(maybe_matrices).unwrap_err();
     }
-    auto l = matrix::Matrix(header.users, header.features);
-    auto r = matrix::Matrix(header.features, header.items);
-    matrix::random_fill_LR(header.features, l, r);
+
+    auto l = Matrix(header.users, header.features);
+    auto r = Matrix(header.features, header.items);
+    random_fill_LR(header.features, l, r);
     auto as = std::move(maybe_matrices).unwrap();
-    return matrix::Matrices{header.num_iterations,
-                            header.alpha,
-                            std::move(std::get<0>(as)),
-                            std::move(std::get<1>(as)),
-                            std::move(l),
-                            std::move(r)};
+    return Matrices{header.num_iterations,
+                    header.alpha,
+                    std::move(std::get<0>(as)),
+                    std::move(std::get<1>(as)),
+                    std::move(l),
+                    std::move(r)};
 }
 } // namespace parser

@@ -30,8 +30,8 @@ void next_iter_l(Matrices const& matrices, Matrix& aux_l, Matrix const& b) {
         for (size_t k = 0; k < matrices.l.n_columns(); k++) {
             double aux = 0;
             auto& a = matrices.a;
-            for (auto a_iter = a.row(i); a_iter.has_next(); ++a_iter) {
-                auto [value, j] = *a_iter;
+            for (auto row = a.row(i); row.has_next(); ++row) {
+                auto [value, j] = *row;
                 aux += DELTA(
                     value, b[std::pair(i, j)], matrices.r[std::pair(k, j)]);
             }

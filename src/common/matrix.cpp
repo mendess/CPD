@@ -9,11 +9,12 @@ namespace matrix {
 #define RAND01 ((double) random() / (double) RAND_MAX)
 
 auto operator<<(std::ostream& os, Matrix const& m) -> std::ostream& {
+    os << std::fixed << std::setprecision(6);
     for (size_t r = 0; r < m.n_rows(); ++r) {
         for (auto i = m.row(r); i.has_next(); ++i) {
-            os << std::fixed << std::setprecision(6) << *i << ' ';
+            os << *i << ' ';
         }
-        os << '\n';
+        if (r != m.n_rows() - 1) os << '\n';
     }
     return os;
 }
