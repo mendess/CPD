@@ -23,41 +23,50 @@ void matrix_b(Matrix const* l, Matrix const* r, Matrix* matrix) {
 }
 
 void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
-    assert(matrices->a_prime.n_rows == matrices->l.rows);
-    for (size_t i = 0; i < matrices->l.rows; i++) {
+    Item const* iter = matrices->a_prime.items;
+    Item const* const end = iter + matrices->a_prime.current_items;
+
+    while (iter != end) {
+        size_t counter = 0;
         for (size_t k = 0; k < matrices->l.columns; k++) {
             double aux = 0;
-            CMatrixIterRow a_iter = cmatrix_iter_row(&matrices->a_prime, i);
-            while (a_iter.iter != a_iter.end) {
-                CMatrixIterRowItem a_iter_item = cmatrix_iter_row_next(&a_iter);
-                size_t const j = a_iter_item.column;
+            Item const* line_iter = iter;
+            size_t const row = line_iter->row;
+            counter = 0;
+            while (line_iter != end && line_iter->row == row) {
+                size_t const column = line_iter->column;
                 aux += delta(
-                    *a_iter_item.value,
-                    *matrix_at(b, i, j),
-                    *matrix_at(&matrices->r, k, j));
+                    line_iter->value,
+                    *matrix_at(b, row, column),
+                    *matrix_at(&matrices->r, k, column));
+                ++line_iter;
+                ++counter;
             }
-            *matrix_at_mut(aux_l, i, k) =
-                *matrix_at(&matrices->l, i, k) - matrices->alpha * aux;
+            *matrix_at_mut(aux_l, row, k) =
+                *matrix_at(&matrices->l, row, k) - matrices->alpha * aux;
         }
+        iter += counter;
     }
 }
 
 void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
     for (size_t k = 0; k < matrices->r.rows; k++) {
-        for (size_t j = 0; j < matrices->r.columns; j++) {
+        Item const* iter = matrices->a_prime_transpose.items;
+        Item const* const end =
+            iter + matrices->a_prime_transpose.current_items;
+        while (iter != end) {
             double aux = 0;
-            CMatrixIterRow a_iter =
-                cmatrix_iter_row(&matrices->a_prime_transpose, j);
-            while (a_iter.iter != a_iter.end) {
-                CMatrixIterRowItem a_iter_item = cmatrix_iter_row_next(&a_iter);
-                size_t const i = a_iter_item.column;
+            size_t const column = iter->row;
+            while (iter != end && iter->row == column) {
+                size_t const row = iter->column;
                 aux += delta(
-                    *a_iter_item.value,
-                    *matrix_at(b, i, j),
-                    *matrix_at(&matrices->l, i, k));
+                    iter->value,
+                    *matrix_at(b, row, column),
+                    *matrix_at(&matrices->l, row, k));
+                ++iter;
             }
-            *matrix_at_mut(aux_r, k, j) =
-                *matrix_at(&matrices->r, k, j) - matrices->alpha * aux;
+            *matrix_at_mut(aux_r, k, column) =
+                *matrix_at(&matrices->r, k, column) - matrices->alpha * aux;
         }
     }
 }

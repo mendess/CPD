@@ -18,13 +18,15 @@ Matrix matrix_clone(Matrix const* other);
 
 static inline double const*
 matrix_at(Matrix const* const m, size_t const row, size_t const column) {
-    assert(m->rows > row && m->columns > column);
+    assert(m->rows > row);
+    assert(m->columns > column);
     return m->data + (row * m->columns + column);
 }
 
 static inline double*
 matrix_at_mut(Matrix* const m, size_t const row, size_t const column) {
-    assert(m->rows > row && m->columns > column);
+    assert(m->rows > row);
+    assert(m->columns > column);
     return m->data + (row * m->columns + column);
 }
 
