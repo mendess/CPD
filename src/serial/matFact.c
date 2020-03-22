@@ -35,6 +35,9 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
             counter = 0;
             while (line_iter != end && line_iter->row == row) {
                 size_t const column = line_iter->column;
+                /* fprintf( */
+                /*     stderr, "(row,column,k) = %zu %zu %zu\n", row, column,
+                 * k); */
                 aux += delta(
                     line_iter->value,
                     *matrix_at(b, row, column),
@@ -59,6 +62,9 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
             size_t const column = iter->row;
             while (iter != end && iter->row == column) {
                 size_t const row = iter->column;
+                /* fprintf( */
+                /*     stderr, "(row,column,k) = %zu %zu %zu\n", row, column,
+                 * k); */
                 aux += delta(
                     iter->value,
                     *matrix_at(b, row, column),

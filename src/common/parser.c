@@ -104,9 +104,6 @@ ParserError parse_matrix_a(
     size_t n_lines = 0;
     while (scan_line(iter, "%zu %zu %lf", &row, &column, &value) == 3) {
         ++n_lines;
-#ifdef DEBUG
-        fprintf(stderr, "line %zu: %zu %zu %lf\n", n_lines, row, column, value);
-#endif
         if (row >= a_prime->n_rows || column >= a_prime->n_cols) {
             fprintf(
                 stderr,
