@@ -35,7 +35,9 @@ OBJ_RELEASE_SERIAL = $(foreach o, $(patsubst $(SOURCES_SERIAL_DIR)/%.c, %.o, $(S
 OBJ_RELEASE_OPENMP = $(foreach o, $(patsubst $(SOURCES_OPENMP_DIR)/%.c, %.o, $(SOURCES_OPENMP)), $(RELEASE_DIR_OPENMP)/$o)
 OBJ_RELEASE_MPI    = $(foreach o, $(patsubst $(SOURCES_MPI_DIR)/%.c, %.o, $(SOURCES_MPI)), $(RELEASE_DIR_MPI)/$o)
 
-DFLAGS = -g -O0 -DDEBUG
+ifndef DFLAGS
+	DFLAGS = -O0 -g -DDEBUG
+endif
 RFLAGS = -O2 -march=native -DNDEBUG
 
 override CFLAGS += -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla
