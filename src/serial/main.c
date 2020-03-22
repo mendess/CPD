@@ -23,6 +23,7 @@ int main(int argc, char const** argv) {
     }
 
     Matrix b = iter(&matrices);
+    matrix_print(&b);
     print_output(&matrices, &b);
     matrices_free(&matrices);
     matrix_free(&b);

@@ -88,10 +88,6 @@ void print_output(Matrices const* const matrices, Matrix const* const b) {
     Item const* iter = matrices->a_prime.items;
     Item const* const end = iter + matrices->a_prime.current_items;
     for (size_t row = 0; row < matrices->a_prime.n_rows; row++) {
-        if (row == 11) {
-            int x = 1;
-            x++;
-        }
         double max = 0;
         size_t max_pos = 0;
         for (size_t column = 0; column < matrices->a_prime.n_cols; column++) {

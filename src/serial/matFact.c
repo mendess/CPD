@@ -26,29 +26,36 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
     Item const* iter = matrices->a_prime.items;
     Item const* const end = iter + matrices->a_prime.current_items;
 
-    while (iter != end) {
-        size_t counter = 0;
-        for (size_t k = 0; k < matrices->l.columns; k++) {
-            double aux = 0;
-            Item const* line_iter = iter;
-            size_t const row = line_iter->row;
-            counter = 0;
-            while (line_iter != end && line_iter->row == row) {
-                size_t const column = line_iter->column;
-                /* fprintf( */
-                /*     stderr, "(row,column,k) = %zu %zu %zu\n", row, column,
-                 * k); */
-                aux += delta(
-                    line_iter->value,
-                    *matrix_at(b, row, column),
-                    *matrix_at(&matrices->r, k, column));
-                ++line_iter;
-                ++counter;
+    for (size_t row = 0; row < matrices->l.rows; row++) {
+        if (iter != end && iter->row == row) {
+            size_t counter = 0;
+            for (size_t k = 0; k < matrices->l.columns; k++) {
+                double aux = 0;
+                Item const* line_iter = iter;
+                size_t const row = line_iter->row;
+                counter = 0;
+                while (line_iter != end && line_iter->row == row) {
+                    size_t const column = line_iter->column;
+                    /* fprintf( */
+                    /*     stderr, "(row,column,k) = %zu %zu %zu\n", row,
+                     * column, k); */
+                    aux += delta(
+                        line_iter->value,
+                        *matrix_at(b, row, column),
+                        *matrix_at(&matrices->r, k, column));
+                    ++line_iter;
+                    ++counter;
+                }
+                *matrix_at_mut(aux_l, row, k) =
+                    *matrix_at(&matrices->l, row, k) - matrices->alpha * aux;
             }
-            *matrix_at_mut(aux_l, row, k) =
-                *matrix_at(&matrices->l, row, k) - matrices->alpha * aux;
+            iter += counter;
+        } else {
+            for (size_t k = 0; k < matrices->l.columns; k++) {
+                *matrix_at_mut(aux_l, row, k) =
+                    *matrix_at(&matrices->l, row, k);
+            }
         }
-        iter += counter;
     }
 }
 
@@ -62,9 +69,6 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
             size_t const column = iter->row;
             while (iter != end && iter->row == column) {
                 size_t const row = iter->column;
-                /* fprintf( */
-                /*     stderr, "(row,column,k) = %zu %zu %zu\n", row, column,
-                 * k); */
                 aux += delta(
                     iter->value,
                     *matrix_at(b, row, column),
