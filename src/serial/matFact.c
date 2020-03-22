@@ -36,9 +36,6 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
                 counter = 0;
                 while (line_iter != end && line_iter->row == row) {
                     size_t const column = line_iter->column;
-                    /* fprintf( */
-                    /*     stderr, "(row,column,k) = %zu %zu %zu\n", row,
-                     * column, k); */
                     aux += delta(
                         line_iter->value,
                         *matrix_at(b, row, column),
@@ -64,19 +61,24 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
         Item const* iter = matrices->a_prime_transpose.items;
         Item const* const end =
             iter + matrices->a_prime_transpose.current_items;
-        while (iter != end) {
-            double aux = 0;
-            size_t const column = iter->row;
-            while (iter != end && iter->row == column) {
-                size_t const row = iter->column;
-                aux += delta(
-                    iter->value,
-                    *matrix_at(b, row, column),
-                    *matrix_at(&matrices->l, row, k));
-                ++iter;
+        for (size_t column = 0; column < matrices->r.columns; column++) {
+            if (iter != end && iter->row == column) {
+                double aux = 0;
+                size_t const column = iter->row;
+                while (iter != end && iter->row == column) {
+                    size_t const row = iter->column;
+                    aux += delta(
+                        iter->value,
+                        *matrix_at(b, row, column),
+                        *matrix_at(&matrices->l, row, k));
+                    ++iter;
+                }
+                *matrix_at_mut(aux_r, k, column) =
+                    *matrix_at(&matrices->r, k, column) - matrices->alpha * aux;
+            } else {
+                *matrix_at_mut(aux_r, k, column) =
+                    *matrix_at(&matrices->r, k, column);
             }
-            *matrix_at_mut(aux_r, k, column) =
-                *matrix_at(&matrices->r, k, column) - matrices->alpha * aux;
         }
     }
 }
