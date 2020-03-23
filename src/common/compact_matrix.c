@@ -32,12 +32,11 @@
 
 CompactMatrix
 cmatrix_make(size_t rows, size_t const columns, size_t const num_elems) {
-    return (CompactMatrix){.values = calloc(sizeof(double), num_elems),
-                           .columns = calloc(sizeof(size_t), num_elems),
-                           .rows = calloc(1 + rows, sizeof(size_t)),
+    return (CompactMatrix){.items = malloc(sizeof(Item) * num_elems),
+                           .total_items = num_elems,
+                           .current_items = 0,
                            .n_rows = rows,
-                           .n_cols = columns,
-                           .n_elems = num_elems};
+                           .n_cols = columns};
 }
 
 void cmatrix_add(
@@ -45,72 +44,39 @@ void cmatrix_add(
     size_t const row,
     size_t const column,
     double const value) {
-    size_t const row_end = m->rows[row + 1];
-    memmove(
-        m->values + row_end + 1,
-        m->values + row_end,
-        (m->n_elems - row_end - 1) * sizeof(double));
-    memmove(
-        m->columns + row_end + 1,
-        m->columns + row_end,
-        (m->n_elems - row_end - 1) * sizeof(size_t));
-    size_t const* const end = m->rows + m->n_rows + 1;
-    for (size_t* rows = m->rows + row + 1; rows != end; ++rows) { ++(*rows); }
-    m->values[row_end] = value;
-    m->columns[row_end] = column;
-}
-
-CMatrixIter cmatrix_iter(CompactMatrix const* const m) {
-    return (CMatrixIter){
-        .m = m,
-        .column_idx = 0,
-        .row_idx = 1,
-    };
-}
-
-CMatrixIterRow
-cmatrix_iter_row(CompactMatrix const* const m, size_t const row) {
-    size_t const start_col_idx = m->rows[row];
-    size_t const end_col_idx = m->rows[row + 1];
-    return (CMatrixIterRow){
-        .iter = m->values + start_col_idx,
-        .end = m->values + end_col_idx,
-        .column = m->columns + start_col_idx,
-    };
-}
-
-CMatrixIterItem cmatrix_iter_next(CMatrixIter* const iter) {
-    while (iter->row_idx == iter->column_idx) { ++iter->row_idx; }
-    CMatrixIterItem cmi = (CMatrixIterItem){
-        .row = iter->row_idx,
-        .column = iter->column_idx,
-        .value = iter->m->values + iter->column_idx,
-    };
-    ++iter->column_idx;
-    return cmi;
-}
-
-CMatrixIterRowItem cmatrix_iter_row_next(CMatrixIterRow* const iter) {
-    CMatrixIterRowItem cmri = (CMatrixIterRowItem){
-        .value = iter->iter,
-        .column = *iter->column,
-    };
-    ++iter->iter;
-    ++iter->column;
-    return cmri;
+    assert(m->current_items < m->total_items);
+    m->items[m->current_items++] =
+        (Item){.value = value, .row = row, .column = column};
 }
 
 void cmatrix_print(CompactMatrix const* m) {
-    for (size_t r = 0; r < m->n_rows; r++) {
-        for (size_t c = 0; c < m->n_cols; ++c) {
-            fprintf(stderr, "%.6lf ", *cmatrix_at(m, r, c));
+    Item const* iter = m->items;
+    Item const* const end = iter + m->current_items;
+    for (size_t row = 0; row < m->n_rows; row++) {
+        for (size_t column = 0; column < m->n_cols; column++) {
+            if (iter != end && iter->row == row && iter->column == column) {
+                fprintf(stderr, "%.6lf ", iter->value);
+                ++iter;
+            } else {
+                fprintf(stderr, "%.6lf ", 0.0);
+            }
         }
         fputc('\n', stderr);
     }
 }
 
+static int item_compare(void const* a, void const* b) {
+    Item* a_ = (Item*) a;
+    Item* b_ = (Item*) b;
+    int c = a_->row - b_->row;
+    if (c == 0) { return a_->column - b_->column; }
+    return c;
+}
+
+void cmatrix_sort(CompactMatrix* m) {
+    qsort(m->items, m->current_items, sizeof(Item), item_compare);
+}
+
 void cmatrix_free(CompactMatrix* m) {
-    free(m->rows);
-    free(m->columns);
-    free(m->values);
+    free(m->items);
 }

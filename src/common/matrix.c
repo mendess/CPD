@@ -85,13 +85,15 @@ void matrices_free(Matrices* m) {
 }
 
 void print_output(Matrices const* const matrices, Matrix const* const b) {
-    double max;
-    size_t max_pos;
+    Item const* iter = matrices->a_prime.items;
+    Item const* const end = iter + matrices->a_prime.current_items;
     for (size_t row = 0; row < matrices->a_prime.n_rows; row++) {
-        max = 0;
-        max_pos = 0;
+        double max = 0;
+        size_t max_pos = 0;
         for (size_t column = 0; column < matrices->a_prime.n_cols; column++) {
-            if (*cmatrix_at(&(matrices->a_prime), row, column) == 0) {
+            if (iter != end && iter->row == row && iter->column == column) {
+                ++iter;
+            } else {
                 double aux = *matrix_at(b, row, column);
                 if (aux > max) {
                     max = aux;
@@ -99,6 +101,6 @@ void print_output(Matrices const* const matrices, Matrix const* const b) {
                 }
             }
         }
-        printf("%ld\n", max_pos);
+        printf("%zu\n", max_pos);
     }
 }

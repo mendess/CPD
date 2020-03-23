@@ -104,9 +104,6 @@ ParserError parse_matrix_a(
     size_t n_lines = 0;
     while (scan_line(iter, "%zu %zu %lf", &row, &column, &value) == 3) {
         ++n_lines;
-#ifdef DEBUG
-        fprintf(stderr, "line %zu: %zu %zu %lf\n", n_lines, row, column, value);
-#endif
         if (row >= a_prime->n_rows || column >= a_prime->n_cols) {
             fprintf(
                 stderr,
@@ -167,6 +164,7 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
     }
     Matrix l = matrix_make(header.users, header.features);
     Matrix r = matrix_make(header.features, header.items);
+    cmatrix_sort(&a_prime_transpose);
     random_fill_LR(header.features, &l, &r);
     *matrices = (Matrices){
         .num_iterations = header.num_iterations,
