@@ -28,10 +28,11 @@ void matrix_b(
     Item const* const end = iter + a->current_items;
 
     while (iter != end) {
+        double bij = 0;
         for (size_t k = 0; k < l->columns; k++) {
-            *matrix_at_mut(matrix, iter->row, iter->column) +=
-                *matrix_at(l, iter->row, k) * *matrix_at(r, k, iter->column);
+            bij += *matrix_at(l, iter->row, k) * *matrix_at(r, k, iter->column);
         }
+        *matrix_at_mut(matrix, iter->row, iter->column) = bij;
         ++iter;
     }
 }
@@ -108,7 +109,6 @@ Matrix iter(Matrices* matrices) {
     Matrix aux_r = matrix_make(matrices->r.rows, matrices->r.columns);
     Matrix b = matrix_make(matrices->a_prime.n_rows, matrices->a_prime.n_cols);
     for (size_t i = 0; i < matrices->num_iterations; i++) {
-        if (i != 0) matrix_clear(&b); // TODO: benchmark
         matrix_b(&matrices->l, &matrices->r, &b, &matrices->a_prime);
         next_iter_l(matrices, &aux_l, &b);
         next_iter_r(matrices, &aux_r, &b);
