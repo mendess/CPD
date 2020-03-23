@@ -16,7 +16,7 @@ for mode in debug release; do
             for target in "${test_targets[@]}"; do
                 rm -f /tmp/err
                 set +e
-                if hash hyperfine; then
+                if hash hyperfine &>/dev/null; then
                     output="$(./target/"$mode"/"$target"/"$binary" "$file.in" 2>/tmp/err)"
                     hyperfine "./target/$mode/$target/$binary $file.in"
                 else
