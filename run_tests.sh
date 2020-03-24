@@ -2,7 +2,6 @@
 
 set -e
 binary="$(grep '^PROG = ' makefile | cut -d'=' -f2 | sed -r 's/ //g')"
-test_targets=(serial)
 make clean
 make DFLAGS=-O0 DFLAGS+=-DNDEBUG
 make release
@@ -13,7 +12,7 @@ for mode in debug release; do
         grep "$1" |
         uniq |
         while read -r file; do
-            for target in "${test_targets[@]}"; do
+            for target in serial openmp; do
                 rm -f /tmp/err
                 set +e
                 if hash hyperfine &>/dev/null; then
