@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <stdio.h>
 
+#define DELTA(a, b, lr) (2*((a)-(b))*-(lr))
+
 static inline double delta(double const a, double const b, double const lr) {
     return 2 * (a - b) * (-lr);
 }

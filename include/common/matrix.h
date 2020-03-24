@@ -6,7 +6,6 @@
 #include <assert.h>
 #include <stddef.h>
 
-#define DELTA(a, b, lr) (2*((a)-(b))*-(lr))
 #define MATRIX_AT(m, row, column) ((m)->data + ((row)*(m)->columns + (column)))
 
 typedef struct Matrix {
