@@ -5,6 +5,8 @@
 
 #include <assert.h>
 #include <stdio.h>
+#define DELTA(a, b, lr) (2*((a)-(b))*-(lr))
+#define MATRIX_AT(m, row, column) ((m)->data + ((row)*(m)->columns + (column)))
 
 static inline double delta(double const a, double const b, double const lr) {
     return 2 * (a - b) * (-lr);
@@ -51,21 +53,21 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
                 counter = 0;
                 while (line_iter != end && line_iter->row == row) {
                     size_t const column = line_iter->column;
-                    aux += delta(
+                    aux += DELTA(
                         line_iter->value,
-                        *matrix_at(b, row, column),
-                        *matrix_at(&matrices->r, k, column));
+                        *MATRIX_AT(b, row, column),
+                        *MATRIX_AT(&matrices->r, k, column));
                     ++line_iter;
                     ++counter;
                 }
-                *matrix_at_mut(aux_l, row, k) =
-                    *matrix_at(&matrices->l, row, k) - matrices->alpha * aux;
+                *MATRIX_AT(aux_l, row, k) =
+                    *MATRIX_AT(&matrices->l, row, k) - matrices->alpha * aux;
             }
             iter += counter;
         } else {
             for (size_t k = 0; k < matrices->l.columns; k++) {
-                *matrix_at_mut(aux_l, row, k) =
-                    *matrix_at(&matrices->l, row, k);
+                *MATRIX_AT(aux_l, row, k) =
+                    *MATRIX_AT(&matrices->l, row, k);
             }
         }
     }
@@ -82,17 +84,17 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
                 size_t const column = iter->row;
                 while (iter != end && iter->row == column) {
                     size_t const row = iter->column;
-                    aux += delta(
+                    aux += DELTA(
                         iter->value,
-                        *matrix_at(b, row, column),
-                        *matrix_at(&matrices->l, row, k));
+                        *MATRIX_AT(b, row, column),
+                        *MATRIX_AT(&matrices->l, row, k));
                     ++iter;
                 }
-                *matrix_at_mut(aux_r, k, column) =
-                    *matrix_at(&matrices->r, k, column) - matrices->alpha * aux;
+                *MATRIX_AT(aux_r, k, column) =
+                    *MATRIX_AT(&matrices->r, k, column) - matrices->alpha * aux;
             } else {
-                *matrix_at_mut(aux_r, k, column) =
-                    *matrix_at(&matrices->r, k, column);
+                *MATRIX_AT(aux_r, k, column) =
+                    *MATRIX_AT(&matrices->r, k, column);
             }
         }
     }
