@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <stddef.h>
 
+#define MATRIX_AT(m, row, column) ((m)->data + ((row)*(m)->columns + (column)))
+
 typedef struct Matrix {
     size_t rows;
     size_t columns;
