@@ -5,8 +5,6 @@
 
 #include <assert.h>
 #include <stdio.h>
-#define DELTA(a, b, lr) (2*((a)-(b))*-(lr))
-#define MATRIX_AT(m, row, column) ((m)->data + ((row)*(m)->columns + (column)))
 
 static inline double delta(double const a, double const b, double const lr) {
     return 2 * (a - b) * (-lr);
