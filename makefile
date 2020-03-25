@@ -40,9 +40,9 @@ ifndef DFLAGS
 endif
 RFLAGS = -O2 -march=native -DNDEBUG
 
-override CFLAGS += -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla
+override CFLAGS += -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla -flto
 PROG = recomender
-OMPFLAGS = -fopenmp
+OMPFLAGS = -fopenmp -Werror=unknown-pragmas
 
 debug: debug_serial debug_openmp debug_mpi
 
@@ -94,6 +94,9 @@ $(RELEASE_DIR_MPI)/%.o: $(SOURCES_MPI) $(SOURCES_COMMON)
 test:
 	./run_tests.sh
 
+bench:
+	./run_tests.sh bench
+
 clean:
 	rm -rf $(BUILD_DIR)
 
@@ -110,3 +113,5 @@ __release_dir:
 	@mkdir -p $(RELEASE_DIR_MPI)
 
 print-% : ; @echo $* = $($*)
+
+cpp-% : ; gcc -E $(OMPFLAGS) $*
