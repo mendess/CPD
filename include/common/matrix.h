@@ -6,7 +6,8 @@
 #include <assert.h>
 #include <stddef.h>
 
-#define MATRIX_AT(m, row, column) ((m)->data + ((row)*(m)->columns + (column)))
+#define MATRIX_AT(m, row, column) \
+    ((m)->data + ((row) * (m)->columns + (column)))
 
 typedef struct Matrix {
     size_t rows;
@@ -17,20 +18,6 @@ typedef struct Matrix {
 Matrix matrix_make(size_t rows, size_t columns);
 
 Matrix matrix_clone(Matrix const* other);
-
-static inline double const*
-matrix_at(Matrix const* const m, size_t const row, size_t const column) {
-    assert(m->rows > row);
-    assert(m->columns > column);
-    return m->data + (row * m->columns + column);
-}
-
-static inline double*
-matrix_at_mut(Matrix* const m, size_t const row, size_t const column) {
-    assert(m->rows > row);
-    assert(m->columns > column);
-    return m->data + (row * m->columns + column);
-}
 
 void matrix_print(Matrix const* m);
 

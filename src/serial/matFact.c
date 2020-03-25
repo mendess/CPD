@@ -6,19 +6,15 @@
 #include <assert.h>
 #include <stdio.h>
 
-#define DELTA(a, b, lr) (2*((a)-(b))*-(lr))
-
-static inline double delta(double const a, double const b, double const lr) {
-    return 2 * (a - b) * (-lr);
-}
+#define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
 void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
     assert(l->columns == r->rows);
     for (size_t i = 0; i < l->rows; i++) {
         for (size_t j = 0; j < r->columns; ++j) {
             for (size_t k = 0; k < l->columns; ++k) {
-                *matrix_at_mut(matrix, i, j) +=
-                    *matrix_at(l, i, k) * *matrix_at(r, k, j);
+                *MATRIX_AT(matrix, i, j) +=
+                    *MATRIX_AT(l, i, k) * *MATRIX_AT(r, k, j);
             }
         }
     }
@@ -32,9 +28,9 @@ void matrix_b(
     while (iter != end) {
         double bij = 0;
         for (size_t k = 0; k < l->columns; k++) {
-            bij += *matrix_at(l, iter->row, k) * *matrix_at(r, k, iter->column);
+            bij += *MATRIX_AT(l, iter->row, k) * *MATRIX_AT(r, k, iter->column);
         }
-        *matrix_at_mut(matrix, iter->row, iter->column) = bij;
+        *MATRIX_AT(matrix, iter->row, iter->column) = bij;
         ++iter;
     }
 }
@@ -66,8 +62,7 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
             iter += counter;
         } else {
             for (size_t k = 0; k < matrices->l.columns; k++) {
-                *MATRIX_AT(aux_l, row, k) =
-                    *MATRIX_AT(&matrices->l, row, k);
+                *MATRIX_AT(aux_l, row, k) = *MATRIX_AT(&matrices->l, row, k);
             }
         }
     }

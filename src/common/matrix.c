@@ -94,7 +94,7 @@ void print_output(Matrices const* const matrices, Matrix const* const b) {
             if (iter != end && iter->row == row && iter->column == column) {
                 ++iter;
             } else {
-                double aux = *matrix_at(b, row, column);
+                double aux = *MATRIX_AT(b, row, column);
                 if (aux > max) {
                     max = aux;
                     max_pos = column;
