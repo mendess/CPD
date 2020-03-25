@@ -10,6 +10,7 @@
 
 void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
     assert(l->columns == r->rows);
+#pragma omp parallel for
     for (size_t i = 0; i < l->rows; i++) {
         for (size_t j = 0; j < r->columns; ++j) {
             for (size_t k = 0; k < l->columns; ++k) {
@@ -22,16 +23,14 @@ void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
 
 void matrix_b(
     Matrix const* l, Matrix const* r, Matrix* matrix, CompactMatrix const* a) {
-    Item const* iter = a->items;
-    Item const* const end = iter + a->current_items;
-
-    while (iter != end) {
+    Item const* const end = a->items + a->current_items;
+#pragma omp parallel for
+    for (Item const* iter = a->items; iter != end; ++iter) {
         double bij = 0;
         for (size_t k = 0; k < l->columns; k++) {
             bij += *MATRIX_AT(l, iter->row, k) * *MATRIX_AT(r, k, iter->column);
         }
         *MATRIX_AT(matrix, iter->row, iter->column) = bij;
-        ++iter;
     }
 }
 
