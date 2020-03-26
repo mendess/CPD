@@ -39,32 +39,26 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
     Item const* iter = matrices->a_prime.items;
     Item const* const end = iter + matrices->a_prime.current_items;
 
-    for (size_t row = 0; row < matrices->l.rows; row++) {
-        if (iter != end && iter->row == row) {
-            size_t counter = 0;
-            for (size_t k = 0; k < matrices->l.columns; k++) {
-                double aux = 0;
-                Item const* line_iter = iter;
-                size_t const row = line_iter->row;
-                counter = 0;
-                while (line_iter != end && line_iter->row == row) {
-                    size_t const column = line_iter->column;
-                    aux += DELTA(
-                        line_iter->value,
-                        *MATRIX_AT(b, row, column),
-                        *MATRIX_AT(&matrices->r, k, column));
-                    ++line_iter;
-                    ++counter;
-                }
-                *MATRIX_AT(aux_l, row, k) =
-                    *MATRIX_AT(&matrices->l, row, k) - matrices->alpha * aux;
+    while (iter != end) {
+        size_t counter = 0;
+        for (size_t k = 0; k < matrices->l.columns; k++) {
+            double aux = 0;
+            Item const* line_iter = iter;
+            size_t const row = line_iter->row;
+            counter = 0;
+            while (line_iter != end && line_iter->row == row) {
+                size_t const column = line_iter->column;
+                aux += DELTA(
+                    line_iter->value,
+                    *MATRIX_AT(b, row, column),
+                    *MATRIX_AT(&matrices->r, k, column));
+                ++line_iter;
+                ++counter;
             }
-            iter += counter;
-        } else {
-            for (size_t k = 0; k < matrices->l.columns; k++) {
-                *MATRIX_AT(aux_l, row, k) = *MATRIX_AT(&matrices->l, row, k);
-            }
+            *MATRIX_AT(aux_l, row, k) =
+                *MATRIX_AT(&matrices->l, row, k) - matrices->alpha * aux;
         }
+        iter += counter;
     }
 }
 
@@ -74,23 +68,18 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
         Item const* const end =
             iter + matrices->a_prime_transpose.current_items;
         for (size_t column = 0; column < matrices->r.columns; column++) {
-            if (iter != end && iter->row == column) {
-                double aux = 0;
-                size_t const column = iter->row;
-                while (iter != end && iter->row == column) {
-                    size_t const row = iter->column;
-                    aux += DELTA(
-                        iter->value,
-                        *MATRIX_AT(b, row, column),
-                        *MATRIX_AT(&matrices->l, row, k));
-                    ++iter;
-                }
-                *MATRIX_AT(aux_r, k, column) =
-                    *MATRIX_AT(&matrices->r, k, column) - matrices->alpha * aux;
-            } else {
-                *MATRIX_AT(aux_r, k, column) =
-                    *MATRIX_AT(&matrices->r, k, column);
+            double aux = 0;
+            size_t const column = iter->row;
+            while (iter != end && iter->row == column) {
+                size_t const row = iter->column;
+                aux += DELTA(
+                    iter->value,
+                    *MATRIX_AT(b, row, column),
+                    *MATRIX_AT(&matrices->l, row, k));
+                ++iter;
             }
+            *MATRIX_AT(aux_r, k, column) =
+                *MATRIX_AT(&matrices->r, k, column) - matrices->alpha * aux;
         }
     }
 }
@@ -102,8 +91,8 @@ static inline void swap(Matrix* a, Matrix* b) {
 }
 
 Matrix iter(Matrices* matrices) {
-    Matrix aux_l = matrix_make(matrices->l.rows, matrices->l.columns);
-    Matrix aux_r = matrix_make(matrices->r.rows, matrices->r.columns);
+    Matrix aux_l = matrix_clone(&matrices->l);
+    Matrix aux_r = matrix_clone(&matrices->r);
     Matrix b = matrix_make(matrices->a_prime.n_rows, matrices->a_prime.n_cols);
     for (size_t i = 0; i < matrices->num_iterations; i++) {
         matrix_b(&matrices->l, &matrices->r, &b, &matrices->a_prime);
