@@ -40,28 +40,35 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
     Item const* const end = iter + matrices->a_prime.current_items;
 
 #pragma omp parallel for firstprivate(iter)
+    // write to private row
     for (size_t row = 0; row < matrices->l.rows; row++) {
-        // fprintf(stderr, "Thread: %d row %zu\n", omp_get_thread_num(), row);
         if (iter != end && iter->row == row) {
             size_t row_len = matrices->a_prime.row_lengths[row];
+            // write to private k
             for (size_t k = 0; k < matrices->l.columns; k++) {
-                double aux = 0;
+                double aux = 0.0;
                 Item const* line_iter = iter;
                 size_t const row = line_iter->row;
+                // write to private columnI
                 for (size_t columnI = 0; columnI < row_len; ++columnI) {
                     size_t const column = line_iter->column;
+                    // write to private variable aux
                     aux += DELTA(
                         line_iter->value,
                         *MATRIX_AT(b, row, column),
                         *MATRIX_AT(&matrices->r, k, column));
+                    // write to private variable
                     ++line_iter;
                 }
+                // write to shared variable aux_l[row][k]
                 *MATRIX_AT(aux_l, row, k) =
                     *MATRIX_AT(&matrices->l, row, k) - matrices->alpha * aux;
             }
+            // write to private variable
             iter += row_len;
         } else {
             for (size_t k = 0; k < matrices->l.columns; k++) {
+                // write to shared variable : aux_l[row][k]
                 *MATRIX_AT(aux_l, row, k) = *MATRIX_AT(&matrices->l, row, k);
             }
         }
