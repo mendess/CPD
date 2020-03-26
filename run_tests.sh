@@ -35,19 +35,21 @@ for mode in "${modes[@]}"; do
             rm -f /tmp/err
             set +e
             if hash hyperfine &>/dev/null; then
-                [[ "$1" != bench* ]] && for target in "${targets[@]}"; do
-                    echo "testing output of $mode/$target"
-                    output="$(./target/"$mode"/"$target"/"$binary" "$file.in" 2>/tmp/err)"
-                    test_output
-                done
-                hyperfine \
-                    --runs 2\
-                    --export-csv "bench_$(basename "$file")_${mode}.csv" \
-                    --export-markdown "bench_$(basename "$file")_${mode}.md" \
-                    --export-json "bench_$(basename "$file")_${mode}.json" \
-                    --warmup 3 \
-                    -L target "$(join_by , "${targets[@]}")"\
-                    "./target/$mode/{target}/$binary $file.in"
+                if [[ "$1" != bench* ]]; then
+                    for target in "${targets[@]}"; do
+                        echo "testing output of $mode/$target/$file"
+                        output="$(./target/"$mode"/"$target"/"$binary" "$file.in" 2>/tmp/err)"
+                        test_output
+                    done
+                else
+                    hyperfine \
+                        --runs 2 --export-csv "bench_$(basename "$file")_${mode}.csv" \
+                        --export-markdown "bench_$(basename "$file")_${mode}.md" \
+                        --export-json "bench_$(basename "$file")_${mode}.json" \
+                        --warmup 3 \
+                        -L target "$(join_by , "${targets[@]}")" \
+                        "./target/$mode/{target}/$binary $file.in"
+                fi
             else
                 for target in "${targets[@]}"; do
                     echo '===============================>'

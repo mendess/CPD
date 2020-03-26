@@ -33,6 +33,7 @@
 CompactMatrix
 cmatrix_make(size_t rows, size_t const columns, size_t const num_elems) {
     return (CompactMatrix){.items = malloc(sizeof(Item) * num_elems),
+                           .row_lengths = calloc(sizeof(size_t), rows),
                            .total_items = num_elems,
                            .current_items = 0,
                            .n_rows = rows,
@@ -45,6 +46,7 @@ void cmatrix_add(
     size_t const column,
     double const value) {
     assert(m->current_items < m->total_items);
+    ++m->row_lengths[row];
     m->items[m->current_items++] =
         (Item){.value = value, .row = row, .column = column};
 }
@@ -79,4 +81,5 @@ void cmatrix_sort(CompactMatrix* m) {
 
 void cmatrix_free(CompactMatrix* m) {
     free(m->items);
+    free(m->row_lengths);
 }
