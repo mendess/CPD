@@ -26,8 +26,13 @@ make clean
 make DFLAGS=-O0 DFLAGS+=-DNDEBUG
 make release
 clear
+if [[ "$1" = bench* ]]; then
+    instances=large_instances
+else
+    instances=instances
+fi
 for mode in "${modes[@]}"; do
-    find instances/ -type f |
+    find "$instances"/ -type f |
         sed -r 's/\.[^.]+$//g' |
         sort -V |
         uniq |
