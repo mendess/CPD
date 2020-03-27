@@ -40,38 +40,26 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
     Item const* const end = iter + matrices->a_prime.current_items;
 
 #pragma omp parallel for firstprivate(iter)
-    // write to private row
-    for (size_t row = 0; row < matrices->l.rows; row++) {
-        if (iter != end && iter->row == row) {
-            size_t row_len = matrices->a_prime.row_lengths[row];
-            // write to private k
-            for (size_t k = 0; k < matrices->l.columns; k++) {
-                double aux = 0.0;
-                Item const* line_iter = iter;
-                size_t const row = line_iter->row;
-                // write to private columnI
-                for (size_t columnI = 0; columnI < row_len; ++columnI) {
-                    size_t const column = line_iter->column;
-                    // write to private variable aux
-                    aux += DELTA(
-                        line_iter->value,
-                        *MATRIX_AT(b, row, column),
-                        *MATRIX_AT(&matrices->r, k, column));
-                    // write to private variable
-                    ++line_iter;
-                }
-                // write to shared variable aux_l[row][k]
-                *MATRIX_AT(aux_l, row, k) =
-                    *MATRIX_AT(&matrices->l, row, k) - matrices->alpha * aux;
+    for (size_t row = 0; row < matrices->a_prime.n_rows; ++row) {
+        size_t row_len = matrices->a_prime.row_lengths[row];
+        while (iter != end && iter->row < row)
+            iter += matrices->a_prime.row_lengths[iter->row];
+        for (size_t k = 0; k < matrices->l.columns; k++) {
+            double aux = 0;
+            Item const* line_iter = iter;
+            size_t const row = line_iter->row;
+            while (line_iter != end && line_iter->row == row) {
+                size_t const column = line_iter->column;
+                aux += DELTA(
+                    line_iter->value,
+                    *MATRIX_AT(b, row, column),
+                    *MATRIX_AT(&matrices->r, k, column));
+                ++line_iter;
             }
-            // write to private variable
-            iter += row_len;
-        } else {
-            for (size_t k = 0; k < matrices->l.columns; k++) {
-                // write to shared variable : aux_l[row][k]
-                *MATRIX_AT(aux_l, row, k) = *MATRIX_AT(&matrices->l, row, k);
-            }
+            *MATRIX_AT(aux_l, row, k) =
+                *MATRIX_AT(&matrices->l, row, k) - matrices->alpha * aux;
         }
+        iter += row_len;
     }
 }
 
@@ -82,23 +70,18 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
         Item const* const end =
             iter + matrices->a_prime_transpose.current_items;
         for (size_t column = 0; column < matrices->r.columns; column++) {
-            if (iter != end && iter->row == column) {
-                double aux = 0;
-                size_t const column = iter->row;
-                while (iter != end && iter->row == column) {
-                    size_t const row = iter->column;
-                    aux += DELTA(
-                        iter->value,
-                        *MATRIX_AT(b, row, column),
-                        *MATRIX_AT(&matrices->l, row, k));
-                    ++iter;
-                }
-                *MATRIX_AT(aux_r, k, column) =
-                    *MATRIX_AT(&matrices->r, k, column) - matrices->alpha * aux;
-            } else {
-                *MATRIX_AT(aux_r, k, column) =
-                    *MATRIX_AT(&matrices->r, k, column);
+            double aux = 0;
+            size_t const column = iter->row;
+            while (iter != end && iter->row == column) {
+                size_t const row = iter->column;
+                aux += DELTA(
+                    iter->value,
+                    *MATRIX_AT(b, row, column),
+                    *MATRIX_AT(&matrices->l, row, k));
+                ++iter;
             }
+            *MATRIX_AT(aux_r, k, column) =
+                *MATRIX_AT(&matrices->r, k, column) - matrices->alpha * aux;
         }
     }
 }
@@ -110,8 +93,8 @@ static inline void swap(Matrix* a, Matrix* b) {
 }
 
 Matrix iter(Matrices* matrices) {
-    Matrix aux_l = matrix_make(matrices->l.rows, matrices->l.columns);
-    Matrix aux_r = matrix_make(matrices->r.rows, matrices->r.columns);
+    Matrix aux_l = matrix_clone(&matrices->l);
+    Matrix aux_r = matrix_clone(&matrices->r);
     Matrix b = matrix_make(matrices->a_prime.n_rows, matrices->a_prime.n_cols);
     for (size_t i = 0; i < matrices->num_iterations; i++) {
         matrix_b(&matrices->l, &matrices->r, &b, &matrices->a_prime);
