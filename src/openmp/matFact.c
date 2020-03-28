@@ -35,31 +35,46 @@ void matrix_b(
     }
 }
 
-void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
-    Item const* iter = matrices->a_prime.items;
-    Item const* const end = iter + matrices->a_prime.current_items;
+static inline size_t start_chunk(
+    size_t const thread_num, int const num_threads, size_t const num_iters) {
+    size_t const rem = (num_iters % num_threads);
+    size_t const x = thread_num * (num_iters - rem) / num_threads;
+    return x + (thread_num < rem ? thread_num : rem);
+}
 
-#pragma omp parallel for firstprivate(iter)
-    for (size_t row = 0; row < matrices->a_prime.n_rows; ++row) {
-        size_t row_len = matrices->a_prime.row_lengths[row];
-        while (iter != end && iter->row < row)
+void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
+#pragma omp parallel
+    {
+        int const num_threads = omp_get_num_threads();
+        Item const* iter = matrices->a_prime.items;
+        Item const* const end = iter + matrices->a_prime.current_items;
+        int const thread_num = omp_get_thread_num();
+        size_t const row_begin =
+            start_chunk(thread_num, num_threads, matrices->a_prime.n_rows);
+        size_t const row_end =
+            start_chunk(thread_num + 1, num_threads, matrices->a_prime.n_rows);
+        while (iter < end && iter->row < row_begin)
             iter += matrices->a_prime.row_lengths[iter->row];
-        for (size_t k = 0; k < matrices->l.columns; k++) {
-            double aux = 0;
-            Item const* line_iter = iter;
-            size_t const row = line_iter->row;
-            while (line_iter != end && line_iter->row == row) {
-                size_t const column = line_iter->column;
-                aux += DELTA(
-                    line_iter->value,
-                    *MATRIX_AT(b, row, column),
-                    *MATRIX_AT(&matrices->r, k, column));
-                ++line_iter;
+
+        while (iter != end && iter->row < row_end) {
+            size_t const row_len = matrices->a_prime.row_lengths[iter->row];
+            for (size_t k = 0; k < matrices->l.columns; k++) {
+                double aux = 0;
+                Item const* line_iter = iter;
+                size_t const row = line_iter->row;
+                while (line_iter != end && line_iter->row == row) {
+                    size_t const column = line_iter->column;
+                    aux += DELTA(
+                        line_iter->value,
+                        *MATRIX_AT(b, row, column),
+                        *MATRIX_AT(&matrices->r, k, column));
+                    ++line_iter;
+                }
+                *MATRIX_AT(aux_l, row, k) =
+                    *MATRIX_AT(&matrices->l, row, k) - matrices->alpha * aux;
             }
-            *MATRIX_AT(aux_l, row, k) =
-                *MATRIX_AT(&matrices->l, row, k) - matrices->alpha * aux;
+            iter += row_len;
         }
-        iter += row_len;
     }
 }
 
