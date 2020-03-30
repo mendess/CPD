@@ -20,7 +20,7 @@ test_output() {
 
 set -e
 binary="$(grep '^PROG = ' makefile | cut -d'=' -f2 | sed -r 's/ //g')"
-targets=(openmp)
+targets=(serial openmp)
 modes=(debug)
 make clean
 make DFLAGS=-O0 DFLAGS+=-DNDEBUG
