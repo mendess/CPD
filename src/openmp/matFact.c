@@ -84,7 +84,8 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
         Item const* iter = matrices->a_prime_transpose.items;
         Item const* const end =
             iter + matrices->a_prime_transpose.current_items;
-        for (size_t column = 0; column < matrices->r.columns; column++) {
+        for (size_t column = 0; iter != end && column < matrices->r.columns;
+             column++) {
             double aux = 0;
             size_t const column = iter->row;
             while (iter != end && iter->row == column) {
