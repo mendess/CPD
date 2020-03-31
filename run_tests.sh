@@ -33,7 +33,7 @@ else
 fi
 for mode in "${modes[@]}"; do
     find "$instances"/ -type f |
-        grep -v '\.keep' |
+        grep '\.in$' |
         sed -r 's/\.[^.]+$//g' |
         sort -V |
         uniq |
