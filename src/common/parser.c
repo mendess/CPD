@@ -49,37 +49,69 @@ static char* read_file(char const* const filename) {
     return file;
 }
 
-static int scan_line(StrIter* const s_iter, char const* const format, ...) {
+typedef enum FormatSpec {
+    DOUBLE,
+    SIZE_T,
+} FormatSpec;
+
+static size_t scan_line(
+    StrIter* const s_iter, size_t n_specs, FormatSpec const* format, ...) {
     va_list args;
     va_start(args, format);
-    int const formats_read = vsscanf(s_iter->str, format, args);
-    va_end(args);
-    while (*s_iter->str != '\n') {
-        if (*s_iter->str == '\0') return formats_read;
-        ++s_iter->str;
+    size_t formats_read = 0;
+    FormatSpec const* const end = format + n_specs;
+    for (; format != end; ++format) {
+        switch (*format) {
+            case DOUBLE: {
+                double* const arg = va_arg(args, double*);
+                char* end;
+                *arg = strtod(s_iter->str, &end);
+                if (*arg == 0.0 && end == s_iter->str) goto END;
+                s_iter->str = end;
+                break;
+            }
+            case SIZE_T: {
+                size_t* const arg = va_arg(args, size_t*);
+                char* end;
+                *arg = strtoull(s_iter->str, &end, 10);
+                if (*arg == 0 && end == s_iter->str) goto END;
+                s_iter->str = end;
+                break;
+            }
+            default:
+                abort();
+        }
+        ++formats_read;
     }
-    ++s_iter->str;
+END:
+    va_end(args);
     return formats_read;
 }
 
 ParserError parse_header(StrIter* const iter, Header* const p) {
-    size_t num_iterations = 0;
-    if (scan_line(iter, "%zu\n", &num_iterations) != 1) {
+    size_t num_iterations;
+    if (scan_line(iter, 1, &(FormatSpec){SIZE_T}, &num_iterations) != 1) {
         fputs("Failed to get number of iterations\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
     double alpha;
-    if (scan_line(iter, "%lf", &alpha) != 1) {
+    if (scan_line(iter, 1, &(FormatSpec){DOUBLE}, &alpha) != 1) {
         fputs("Failed to get alpha\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
     size_t features;
-    if (scan_line(iter, "%zu", &features) != 1) {
+    if (scan_line(iter, 1, &(FormatSpec){SIZE_T}, &features) != 1) {
         fputs("Failed to get number of features\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
     size_t users, items, non_zero_elems;
-    if (scan_line(iter, "%zu %zu %zu", &users, &items, &non_zero_elems) != 3) {
+    if (scan_line(
+            iter,
+            3,
+            (FormatSpec[]){SIZE_T, SIZE_T, SIZE_T},
+            &users,
+            &items,
+            &non_zero_elems) != 3) {
         fputs("Failed to get matrix A information\n", stderr);
         return PARSER_ERROR_INVALID_FORMAT;
     }
@@ -102,7 +134,13 @@ ParserError parse_matrix_a(
     size_t row, column;
     double value;
     size_t n_lines = 0;
-    while (scan_line(iter, "%zu %zu %lf", &row, &column, &value) == 3) {
+    while (scan_line(
+               iter,
+               3,
+               (FormatSpec[]){SIZE_T, SIZE_T, DOUBLE},
+               &row,
+               &column,
+               &value) == 3) {
         ++n_lines;
         if (row >= a_prime->n_rows || column >= a_prime->n_cols) {
             fprintf(
