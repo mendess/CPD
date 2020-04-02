@@ -34,34 +34,43 @@ The new matrix B is calculated in every iteration however since the only positio
 %TODO divide into smaller sections
 
 %the approach used for parallelization
-%what decomposition was used -> TODO
+%what decomposition was used
 %what were the synchronization concerns and why
-%how was load balancing addressed -> iter_l chunks
+%how was load balancing addressed -> iter_l chunks?
 %what are the performance results, and are they what you expected
 
 %im noob pls add paragraph here 
 
 The approach we took for parallelization was quite methodic. First was to optimize as 
 far as we could the sequential version. We believed that the optimizations could help the
-parallelization process. Second was to look for easily parallelizable sections of the code.
-The first we identified was the computation of matrix B that, in our case, is divided into
-two functions due to optimization concerns. %expand this?  
-This parallelization could be easily done because there's no data dependencies within the 
-calculation. Considering this, the parallelization was done on the outer for loop of the 
-matrix calculation, where the rows are distribitued for the threads.
-
-After dealing with the easilly parallelizable sections, we started to take a look
+parallelization process. Second was to identify CPU-heavy tasks that could be  
+parallelizable. Considering this, the sections identified were the calculations of the three 
+matrices: B, L and R.  We started by parallelizing the calculation of matrix B, as it is
+considerably easier than the others. This parallelization could be easily done because
+there's no data dependencies within the calculation. Considering this, the parallelization
+was done on the outer for loop of the matrix calculation, where the rows are distribitued 
+for the threads. After dealing with the easilly parallelizable sections, we started to take a look
 into the code for calculating the L and R matrices. Due to the optimizations performed in
 the sequential version, there was no race conditions in these calculations. %explain!!!
 To parallelize the calculation of the R matrix, the same tecnhique used in the matrix B 
-calculation was used: parallelize the outer loop. In both cases, trying to parallelize
-the most inner loop only brought a time loss when comparing to the outer loop parallelization
+calculation was used: parallelize the outer loop. In all cases, trying to parallelize
+the most inner loop only brought a time loss when comparing to the outer loop parallelization.
+This was most likely caused by the overhead of calling threads more frequently. 
+%TODO parallelization of L calc
+For both calculations of matrix L and R, the decomposition was the same way it was done
+for matrix B's calculation, by distributing the rows for the threads.
+for the threads.
 
 %...
 
 As for the scheduling, using dynamic brought a better speedup in some cases, but also made
-some instances slower. Taking this in consideration, the decision to keep a static schedule
-was made. %will this be true?
+some instances slower. While using static scheduling, the slower instances have a common 
+characteristic: the A matrix has some rows which have substantially more elements than others. 
+This translated in a bad load balacing, as some threads will have to wait for the one dealing
+with the bigger rows. 
+%Taking this in consideration, the decision to keep a static schedule
+%was made. keeping here not to forget to add better conclusion
+
 
 %...
 
