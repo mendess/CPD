@@ -30,5 +30,46 @@ The new matrix B is calculated in every iteration however since the only positio
 
 \section{Solution}
 
+%very wip
+
+%the approach used for parallelization
+%what decomposition was used
+%what were the synchronization concerns and why
+%how was load balancing addressed -> iter_l chunks
+%what are the performance results, and are they what you expected
+
+%im noob pls add paragraph here 
+
+The approach we took for parallelization was quite methodic. First was to optimize as 
+far as we could the sequential version. We believed that the optimizations could help the
+parallelization process. Second was to look for easily parallelizable sections of the code.
+The first we identified was the computation of matrix B that, in our case, is divided into
+two functions due to optimization concerns. %expand this?  
+This parallelization could be easily done because there's no data dependencies within the 
+calculation. Considering this, the parallelization was done on the outer for loop of the 
+matrix calculation, where the rows are distribitued for the threads.
+
+After dealing with the easilly parallelizable sections, we started to take a look
+into the code for calculating the L and R matrices. Due to the optimizations performed in
+the sequential version, there was no race conditions in these calculations. %explain!!!
+To parallelize the calculation of the R matrix, the same tecnhique used in the matrix B 
+calculation was used: parallelize the outer loop. In both cases, trying to parallelize
+the most inner loop only brought a time loss when comparing to the outer loop parallelization
+
+%...
+
+As for the scheduling, using dynamic brought a better speedup in some cases, but also made
+some instances slower, and so we opted for static scheduling.
+
+%...
+
+%very rough
+For the performance obtained for the sequential version, we were quite satisfied with
+it. This can be attributed to the numerous optimizations and data structures used.
+As for the parallel version, the speedups were quite good taking into account how
+simple some parts of the parallelizing process was. %change?
+
+%ADD PRETTY GRAPHS!
+
 \end{document}
 
