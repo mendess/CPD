@@ -19,7 +19,12 @@ linkcolor=black}
 \maketitle
 %\tableofcontents
 
-\section{Introduction}
+\section{Data Structure}
+There was multiple approaches to store the matrix A, the most basic one was storing the values in a adjacency matrix however as the matrix A is a sparse one we opted to store it in a compressed sparse row (CSR). The CSR allows to store just the non-zero values in a single array making this a good choice in terms of caching since all the values are stored in adjancent memory positions
+
+\section{Matrix B multiplication}
+The new matrix B is calculated in every iteration however since the only positions that change are the ones who are different from zero in Matrix A we only multiply specific positions instead of the full matrix.
+\section{Serial Vers}
 
 \section{Problem}
 
