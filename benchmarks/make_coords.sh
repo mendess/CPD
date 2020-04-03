@@ -1,8 +1,8 @@
 #!/bin/bash
 [ -d benchmaks ] || cd ..
 
-for num in 1 2 4 8; do
-    output_file=report/benchmark${num}.tex
+for num in 1 2 4 8 hyper_8; do
+    output_file=report/benchmark_${num}.tex
     rm -f $output_file
     {
         cat <<EOF
@@ -24,7 +24,7 @@ for num in 1 2 4 8; do
 EOF
         for kind in guided static serial; do
             echo '\addplot coordinates {'
-            for file in benchmarks/*_"$num"_*csv; do
+            for file in benchmarks/*h_"$num"_*csv; do
                 [[ "$file" = *inst30* ]] && continue
                 nfile="$(echo "$file" | sed -r 's/.*inst([^-]+).*\.in.csv/\1/')"
                 awk -F',' \

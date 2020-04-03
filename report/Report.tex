@@ -43,13 +43,6 @@ done the full matrix B is calculated.
 
 \section{Solution}
 
-%very wip
-%TODO divide into smaller sections
-
-%how was load balancing addressed -> iter_l chunks?
-
-%im noob pls add paragraph here
-
 The approach we took for parallelization was quite methodical. First we opted to
 optimize the sequential version as far as we could. We experimented with using
 \textit{openMP} in the inner loops but it always made the program very slow, even slower
@@ -105,24 +98,28 @@ for (size_t k = 0; k < r->rows; k++)
 \subsection{Matrix L}
 
 Matrix L was also simple to parallelize once we figured out how to split the
-rows of A between the threads. Initially we had \textit{openMP} parallelize a for loop
-over the rows of A but this was error prone and inefficient. So we decided to
-distribute the rows manually. This resulted in a minor speed up.
+rows of A between the threads. The outer loop is over the non empty rows of A
+so we had to change this to be over all the possible rows of A, empty or not.
+This would mean a loss of performance for the sequential version but it was
+needed in order to split sets of rows between the threads. What this translates
+to is a while loop that makes sure the A iterator is synchronized with the outer
+loop.
 
 In terms of race conditions the same reasoning applies. The only write to shared
 memory depends on a variable that is private to each thread.
 
 \begin{minted}{c}
-#pragma omp parallel
-{// Each thread figures out which rows of A it will operate on
-    Item const* (iter, end) = // ...
-    while (iter != end && iter->row < row_end) // for each row of A
-        for (size_t k = 0; k < l->columns; k++)
-            double aux = // sum of deltas for this row of a
-            // only write to shared memory: two threads never have the same row
-            *MATRIX_AT(aux_l, row, k) =
-                *MATRIX_AT(l, row, k) - alpha * aux;
-}
+Item const* iter = a->items;
+Item const* const end = iter + a->current_items;
+#pragma omp parallel for firstprivate(iter) schedule(guided)
+for (size_t row = 0; row < a->n_rows; ++row)
+    size_t row_len = a->row_lengths[row];
+    while (iter != end && iter->row < row) iter += a->row_lengths[iter->row];
+    for (size_t k = 0; k < l->columns; k++)
+        double aux = // sum of deltas for this row of a
+        // only write to shared memory: two threads never have the same row
+        *MATRIX_AT(aux_l, row, k) = *MATRIX_AT(l, row, k) - alpha * aux;
+    iter += row_len;
 \end{minted}
 
 \section{Speed up}
@@ -153,16 +150,21 @@ to the balanced ones.
 It is also important to note that, in bigger instances, the parsing creates a
 significant overhead, making the speed up less noticeable.
 
-%still rough
-After the optimizations, the performance for the sequential version fitted
-within expectations. This can be attributed to the numerous optimizations and
-data structures used.  As for the parallel version, the speed ups were quite good
-taking into account how we decided to tackle the parallelization. In the smaller
-instances the speed up was worse, as expected, mainly because of the overhead
-introduced by the parallelization process. Excluding the instances where the
-parsing creates an overhead, the speed ups were quite good, getting between X
-%TODO
-and 3.5.
+\section{A note on hyper threading}
+
+As can be seen in Appendix~\ref{app:bench} enabling hyper threading on 4 physical
+cores has an interesting effect. When compared with the version with 4 threads
+it brings little to no benefit, but when compared to forcing 8 threads on 4
+physical cores it does improve the performance.
+
+Sorted from best to worse:
+
+\begin{itemize}
+    \item 8 threads on 4 hyper threaded cores;
+    \item 4 threads on 4 cores;
+    \item 8 threads on 4 cores;
+\end{itemize}
+
 
 \section{Future Work}
 In a future implementation the parser could be made parallel to see if could
@@ -170,24 +172,33 @@ bring further improvements. This seems unlikely as the chunks of the parsed
 input need to be aggregated at the end of the parsing and this could prove to be
 too much to compensate the overhead it might bring to smaller instances.
 
+\pagebreak
 \begin{appendices}
-    \section{Benchmarks}
+    \section{Benchmarks}\label{app:bench}
+    These benchmarks were run on an Intel i5-8250U @ 3.400GHz with 4 physical
+    cores with hyper threading disabled as to not interfere with the
+    measurements. The last graph shows the results with hyper threading enabled
+    for comparison.
 
-    \subsection{Num of threads equal to 1}
+    \subsection{Number of threads equal to 1}
 
-    \input{./benchmark1.tex}
+    \input{\detokenize{./benchmark_1.tex}}
 
-    \subsection{Num of threads equal to 2}
+    \subsection{Number of threads equal to 2}
 
-    \input{./benchmark2.tex}
+    \input{\detokenize{./benchmark_2.tex}}
 
-    \subsection{Num of threads equal to 4}
+    \subsection{Number of threads equal to 4}
 
-    \input{./benchmark4.tex}
+    \input{\detokenize{./benchmark_4.tex}}
 
-    \subsection{Num of threads equal to 8}
+    \subsection{Number of threads equal to 8}
 
-    \input{./benchmark8.tex}
+    \input{\detokenize{./benchmark_8.tex}}
+
+    \subsection{Number of threads equal to 8 with hyper threading}
+
+    \input{\detokenize{./benchmark_hyper_8.tex}}
 \end{appendices}
 
 %ADD PRETTY GRAPHS!

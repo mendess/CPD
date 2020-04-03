@@ -14,22 +14,28 @@
             nodes near coords align={vertical},
         ]
 \addplot coordinates {
-(1000,14)	% ./guided_new_parser_bin
-(200,23)	% ./guided_new_parser_bin
-(400,70)	% ./guided_new_parser_bin
-(500,33)	% ./guided_new_parser_bin
+(1000,12)	% ./guided_new_parser_bin
+(200,19)	% ./guided_new_parser_bin
+(400,53)	% ./guided_new_parser_bin
+(500,30)	% ./guided_new_parser_bin
+(ML100k,60)	% ./guided_new_parser_bin
+(ML1M,110)	% ./guided_new_parser_bin
 };
 \addplot coordinates {
-(1000,14)	% ./static_new_parser_bin
-(200,22)	% ./static_new_parser_bin
-(400,74)	% ./static_new_parser_bin
-(500,40)	% ./static_new_parser_bin
+(1000,11)	% ./static_new_parser_bin
+(200,19)	% ./static_new_parser_bin
+(400,53)	% ./static_new_parser_bin
+(500,29)	% ./static_new_parser_bin
+(ML100k,60)	% ./static_new_parser_bin
+(ML1M,106)	% ./static_new_parser_bin
 };
 \addplot coordinates {
 (1000,40)	% ./serial_new_parser_bin
 (200,69)	% ./serial_new_parser_bin
 (400,218)	% ./serial_new_parser_bin
 (500,92)	% ./serial_new_parser_bin
+(ML100k,200)	% ./serial_new_parser_bin
+(ML1M,528)	% ./serial_new_parser_bin
 };
 
         \legend{guided, static, serial}
