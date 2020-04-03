@@ -40,7 +40,7 @@ for mode in "${modes[@]}"; do
         while read -r file; do
             rm -f /tmp/err
             set +e
-            if hash hyperfine &>/dev/null; then
+            if command -v hyperfine &>/dev/null; then
                 if [[ "$1" != bench* ]]; then
                     for target in "${targets[@]}"; do
                         echo "testing output of $mode/$target/$file"
