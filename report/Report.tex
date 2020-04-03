@@ -4,6 +4,7 @@
 \usepackage[cache=false]{minted}
 \usepackage[dvipsnames]{xcolor}
 \usepackage{a4wide,syntax,listings,appendix,tikz,wrapfig,graphicx,hyperref}
+\usepackage[margin=0.8in]{geometry}
 \hypersetup{pdftitle={g08report},
 pdfauthor={Pedro Mendes},
 colorlinks=true,
@@ -25,6 +26,10 @@ storing the values in a full matrix however as matrix A is sparse
 we opted to store it as compressed sparse row (CSR) matrix. A CSR only stores
 non-zero values in a single array making this a good choice in terms of
 caching since all the values are stored in adjacent memory positions.
+
+Another benefit of this data structure is that it completely removes an
+\texttt{if} statement, checking if the element is non zero, in inner most loop
+of the calculations of matrix L and R. Improving even more their performance.
 
 The other matrices were left as full matrices since they needed to be indexed in
 $O(1)$ time and a CSR does not permit this.
@@ -157,9 +162,8 @@ data structures used.  As for the parallel version, the speedups were quite good
 taking into account how we decided to tackle the parallelization. In the smaller
 instances the speedup was worse, as expected, mainly because of the overhead
 introduced by the parallelization process. Excluding the instances where the
-parsing creates an overhead, the speedups were quite good, getting between X
-%TODO
-and 3.5.
+parsing creates an overhead, the speedups were quite good, getting between 3 and
+3.5.
 
 \section{Future Work}
 In a future implementation the parser could be made parallel to see if could
