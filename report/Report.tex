@@ -4,6 +4,9 @@
 \usepackage[cache=false]{minted}
 \usepackage[dvipsnames]{xcolor}
 \usepackage{a4wide,syntax,listings,appendix,tikz,wrapfig,graphicx,hyperref}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{pgfplots}
+\usepackage{appendix}
 \hypersetup{pdftitle={g08report},
 pdfauthor={Pedro Mendes},
 colorlinks=true,
@@ -167,6 +170,25 @@ bring further improvements. This seems unlikely as the chunks of the parsed
 input need to be aggregated at the end of the parsing and this could prove to be
 too much to compensate the overhead it might bring to smaller instances.
 
+\begin{appendices}
+    \section{Benchmarks}
+
+    \subsection{Num of threads equal to 1}
+
+    \input{./benchmark1.tex}
+
+    \subsection{Num of threads equal to 2}
+
+    \input{./benchmark2.tex}
+
+    \subsection{Num of threads equal to 4}
+
+    \input{./benchmark4.tex}
+
+    \subsection{Num of threads equal to 8}
+
+    \input{./benchmark8.tex}
+\end{appendices}
 
 %ADD PRETTY GRAPHS!
 %add tables

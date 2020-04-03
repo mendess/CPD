@@ -1,0 +1,37 @@
+\begin{tikzpicture}
+    \begin{axis}[
+            ybar,
+            enlargelimits=true,
+            bar width=20pt,
+            width=\textwidth,
+            height=300pt,
+            legend style={at={(0.5,-0.15)}, anchor=north,legend columns=-1},
+            ylabel={seconds},
+            xlabel={instances},
+            symbolic x coords={1000,200,400,500,ML100k,ML1M},
+            xtick=data,
+            nodes near coords,
+            nodes near coords align={vertical},
+        ]
+\addplot coordinates {
+(1000,14)	% ./guided_new_parser_bin
+(200,23)	% ./guided_new_parser_bin
+(400,70)	% ./guided_new_parser_bin
+(500,33)	% ./guided_new_parser_bin
+};
+\addplot coordinates {
+(1000,14)	% ./static_new_parser_bin
+(200,22)	% ./static_new_parser_bin
+(400,74)	% ./static_new_parser_bin
+(500,40)	% ./static_new_parser_bin
+};
+\addplot coordinates {
+(1000,40)	% ./serial_new_parser_bin
+(200,69)	% ./serial_new_parser_bin
+(400,218)	% ./serial_new_parser_bin
+(500,92)	% ./serial_new_parser_bin
+};
+
+        \legend{guided, static, serial}
+    \end{axis}
+\end{tikzpicture}

@@ -1,0 +1,43 @@
+\begin{tikzpicture}
+    \begin{axis}[
+            ybar,
+            enlargelimits=true,
+            bar width=20pt,
+            width=\textwidth,
+            height=300pt,
+            legend style={at={(0.5,-0.15)}, anchor=north,legend columns=-1},
+            ylabel={seconds},
+            xlabel={instances},
+            symbolic x coords={1000,200,400,500,ML100k,ML1M},
+            xtick=data,
+            nodes near coords,
+            nodes near coords align={vertical},
+        ]
+\addplot coordinates {
+(1000,40)	% ./guided_new_parser_bin
+(200,69)	% ./guided_new_parser_bin
+(400,209)	% ./guided_new_parser_bin
+(500,91)	% ./guided_new_parser_bin
+(ML100k,200)	% ./guided_new_parser_bin
+(ML1M,522)	% ./guided_new_parser_bin
+};
+\addplot coordinates {
+(1000,40)	% ./static_new_parser_bin
+(200,69)	% ./static_new_parser_bin
+(400,210)	% ./static_new_parser_bin
+(500,92)	% ./static_new_parser_bin
+(ML100k,197)	% ./static_new_parser_bin
+(ML1M,515)	% ./static_new_parser_bin
+};
+\addplot coordinates {
+(1000,40)	% ./serial_new_parser_bin
+(200,68)	% ./serial_new_parser_bin
+(400,212)	% ./serial_new_parser_bin
+(500,92)	% ./serial_new_parser_bin
+(ML100k,199)	% ./serial_new_parser_bin
+(ML1M,517)	% ./serial_new_parser_bin
+};
+
+        \legend{guided, static, serial}
+    \end{axis}
+\end{tikzpicture}
