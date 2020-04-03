@@ -4,7 +4,6 @@
 \usepackage[cache=false]{minted}
 \usepackage[dvipsnames]{xcolor}
 \usepackage{a4wide,syntax,listings,appendix,tikz,wrapfig,graphicx,hyperref}
-\usepackage[margin=0.8in]{geometry}
 \hypersetup{pdftitle={g08report},
 pdfauthor={Pedro Mendes},
 colorlinks=true,
@@ -26,10 +25,6 @@ storing the values in a full matrix however as matrix A is sparse
 we opted to store it as compressed sparse row (CSR) matrix. A CSR only stores
 non-zero values in a single array making this a good choice in terms of
 caching since all the values are stored in adjacent memory positions.
-
-Another benefit of this data structure is that it completely removes an
-\texttt{if} statement, checking if the element is non zero, in inner most loop
-of the calculations of matrix L and R. Improving even more their performance.
 
 The other matrices were left as full matrices since they needed to be indexed in
 $O(1)$ time and a CSR does not permit this.
@@ -72,7 +67,7 @@ for (size_t i = 0; i < l->rows; i++)
 \end{minted}
 
 For the second version of we also have guarantees of no data races because each
-thread gets a chunk of the indices of A that do not overlap.
+thread gets a chunk of the indexes of A that do not overlap.
 \begin{minted}{c}
 Item const* const end = a->items + a->current_items;
 #pragma omp parallel for
@@ -107,9 +102,9 @@ for (size_t k = 0; k < r->rows; k++)
 \subsection{Matrix L}
 
 Matrix L was also simple to parallelize once we figured out how to split the
-rows of A between the threads. Initially we had openmp parallelize a for loop
+rows of A between the threads. Initially we had \textit{openMP} parallelize a for loop
 over the rows of A but this was error prone and inefficient. So we decided to
-distribuite the rows manually. This resulted in a minor speedup.
+distribuite the rows manually. This resulted in a minor speed up.
 
 In terms of race conditions the same reasoning applies. The only write to shared
 memory depends on a variable that is private to each thread.
@@ -127,12 +122,12 @@ memory depends on a variable that is private to each thread.
 }
 \end{minted}
 
-\section{Speedup}
+\section{Speed up}
 Disregarding the small instances, the speed up obtained, using 4 physical cores,
 was close to 3x the serial version. Sometimes even reaching 3.5 times speed up
 on some instances.
 
-As for the scheduling, using guided brought a better speedup in some cases, but
+As for the scheduling, using guided brought a better speed up in some cases, but
 also made some instances slower. The difference, however, was negligible.
 
 The instances where guided was slightly better were the ones where the number of
@@ -158,12 +153,13 @@ significant overhead, making the speed up less noticeable.
 %still rough
 After the optimizations, the performance for the sequential version fitted
 within expectations. This can be attributed to the numerous optimizations and
-data structures used.  As for the parallel version, the speedups were quite good
+data structures used.  As for the parallel version, the speed ups were quite good
 taking into account how we decided to tackle the parallelization. In the smaller
-instances the speedup was worse, as expected, mainly because of the overhead
+instances the speed up was worse, as expected, mainly because of the overhead
 introduced by the parallelization process. Excluding the instances where the
-parsing creates an overhead, the speedups were quite good, getting between 3 and
-3.5.
+parsing creates an overhead, the speed ups were quite good, getting between X
+%TODO
+and 3.5.
 
 \section{Future Work}
 In a future implementation the parser could be made parallel to see if could
