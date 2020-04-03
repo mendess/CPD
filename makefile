@@ -40,8 +40,11 @@ ifndef DFLAGS
 endif
 RFLAGS = -O2 -march=native -DNDEBUG
 
-override CFLAGS += -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla
+override CFLAGS += -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla -flto
 PROG = recomender
+OMPFLAGS = -fopenmp -Werror=unknown-pragmas
+
+all: debug _rename
 
 debug: debug_serial debug_openmp debug_mpi
 
@@ -49,7 +52,7 @@ debug_serial: __debug_dir $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL)
 	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL) $(DFLAGS) -o $(DEBUG_DIR_SERIAL)/$(PROG)
 
 debug_openmp: __debug_dir $(OBJ_DEBUG) $(OBJ_DEBUG_OPENMP)
-	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP) $(DFLAGS) -o $(DEBUG_DIR_OPENMP)/$(PROG)
+	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP) $(DFLAGS) -o $(DEBUG_DIR_OPENMP)/$(PROG) $(OMPFLAGS)
 
 debug_mpi: __debug_dir $(OBJ_DEBUG) $(OBJ_DEBUG_MPI)
 	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI)    $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_MPI)    $(DFLAGS) -o $(DEBUG_DIR_MPI)/$(PROG)
@@ -60,7 +63,7 @@ release_serial: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL)
 	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL) $(RFLAGS) -o $(RELEASE_DIR_SERIAL)/$(PROG)
 
 release_openmp: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP)
-	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP) $(RFLAGS) -o $(RELEASE_DIR_OPENMP)/$(PROG)
+	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP) $(RFLAGS) -o $(RELEASE_DIR_OPENMP)/$(PROG) $(OMPFLAGS)
 
 release_mpi: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_MPI)
 	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI)    $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_MPI)    $(RFLAGS) -o $(RELEASE_DIR_MPI)/$(PROG)
@@ -72,7 +75,7 @@ $(DEBUG_DIR_SERIAL)/%.o: $(SOURCES_SERIAL) $(SOURCES_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_SERIAL)/%, $(SOURCES_SERIAL_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) -c -o $@
 
 $(DEBUG_DIR_OPENMP)/%.o: $(SOURCES_OPENMP) $(SOURCES_COMMON)
-	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_OPENMP)/%, $(SOURCES_OPENMP_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) -c -o $@
+	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_OPENMP)/%, $(SOURCES_OPENMP_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) -c -o $@ $(OMPFLAGS)
 
 $(DEBUG_DIR_MPI)/%.o: $(SOURCES_MPI) $(SOURCES_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_MPI)/%, $(SOURCES_MPI_DIR)/%, $@))       $(CFLAGS) $(DFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI)    -c -o $@
@@ -85,13 +88,16 @@ $(RELEASE_DIR_SERIAL)/%.o: $(SOURCES_SERIAL) $(SOURCES_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_SERIAL)/%, $(SOURCES_SERIAL_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) -c -o $@
 
 $(RELEASE_DIR_OPENMP)/%.o: $(SOURCES_OPENMP) $(SOURCES_COMMON)
-	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_OPENMP)/%, $(SOURCES_OPENMP_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) -c -o $@
+	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_OPENMP)/%, $(SOURCES_OPENMP_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) -c -o $@ $(OMPFLAGS)
 
 $(RELEASE_DIR_MPI)/%.o: $(SOURCES_MPI) $(SOURCES_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_MPI)/%, $(SOURCES_MPI_DIR)/%, $@))       $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI) -c -o $@
 
 test:
 	./run_tests.sh
+
+bench:
+	./run_tests.sh bench
 
 clean:
 	rm -rf $(BUILD_DIR)
@@ -108,4 +114,10 @@ __release_dir:
 	@mkdir -p $(RELEASE_DIR_OPENMP)
 	@mkdir -p $(RELEASE_DIR_MPI)
 
+_rename:
+	cp $(DEBUG_DIR_SERIAL)/$(PROG) matFact
+	cp $(DEBUG_DIR_OPENMP)/$(PROG) matFact-omp
+
 print-% : ; @echo $* = $($*)
+
+cpp-% : ; gcc -E $(OMPFLAGS) $*
