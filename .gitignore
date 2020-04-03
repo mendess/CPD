@@ -57,3 +57,10 @@ target/
 *.mats
 *.jpg
 matFact*
+*.toc
+*.aux
+*.log
+Report.pdf
+*.html
+*.bbl
+*.blg
