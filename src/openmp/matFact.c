@@ -11,7 +11,7 @@
 
 void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
     assert(l->columns == r->rows);
-#pragma omp parallel for
+#pragma omp parallel for schedule(guided)
     for (size_t i = 0; i < l->rows; i++) {
         for (size_t j = 0; j < r->columns; ++j) {
             for (size_t k = 0; k < l->columns; ++k) {
@@ -25,7 +25,7 @@ void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
 void matrix_b(
     Matrix const* l, Matrix const* r, Matrix* matrix, CompactMatrix const* a) {
     Item const* const end = a->items + a->current_items;
-#pragma omp parallel for
+#pragma omp parallel for schedule(guided)
     for (Item const* iter = a->items; iter < end; ++iter) {
         double bij = 0;
         for (size_t k = 0; k < l->columns; k++) {
@@ -39,7 +39,7 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
     Item const* iter = matrices->a_prime.items;
     Item const* const end = iter + matrices->a_prime.current_items;
 
-#pragma omp parallel for firstprivate(iter) schedule(dynamic)
+#pragma omp parallel for firstprivate(iter) schedule(guided)
     for (size_t row = 0; row < matrices->a_prime.n_rows; ++row) {
         size_t row_len = matrices->a_prime.row_lengths[row];
         while (iter != end && iter->row < row)
@@ -64,7 +64,7 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
 }
 
 void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(guided)
     for (size_t k = 0; k < matrices->r.rows; k++) {
         Item const* iter = matrices->a_prime_transpose.items;
         Item const* const end =
