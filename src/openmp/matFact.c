@@ -26,7 +26,7 @@ void matrix_b(
     Matrix const* l, Matrix const* r, Matrix* matrix, CompactMatrix const* a) {
     Item const* const end = a->items + a->current_items;
 #pragma omp parallel for
-    for (Item const* iter = a->items; iter != end; ++iter) {
+    for (Item const* iter = a->items; iter < end; ++iter) {
         double bij = 0;
         for (size_t k = 0; k < l->columns; k++) {
             bij += *MATRIX_AT(l, iter->row, k) * *MATRIX_AT(r, k, iter->column);
