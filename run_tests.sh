@@ -25,7 +25,6 @@ modes=(debug)
 make clean
 make DFLAGS=-O0 DFLAGS+=-DNDEBUG
 make release
-clear
 if [[ "$1" = bench* ]]; then
     instances=large_instances
 else
