@@ -44,6 +44,8 @@ override CFLAGS += -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla -flto
 PROG = recomender
 OMPFLAGS = -fopenmp -Werror=unknown-pragmas
 
+all: debug _rename
+
 debug: debug_serial debug_openmp debug_mpi
 
 debug_serial: __debug_dir $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL)
@@ -111,6 +113,10 @@ __release_dir:
 	@mkdir -p $(RELEASE_DIR_SERIAL)
 	@mkdir -p $(RELEASE_DIR_OPENMP)
 	@mkdir -p $(RELEASE_DIR_MPI)
+
+_rename:
+	cp $(DEBUG_DIR_SERIAL)/$(PROG) matFact
+	cp $(DEBUG_DIR_OPENMP)/$(PROG) matFact-omp
 
 print-% : ; @echo $* = $($*)
 
