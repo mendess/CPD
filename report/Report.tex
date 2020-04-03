@@ -20,72 +20,135 @@ linkcolor=black}
 %\tableofcontents
 
 \section{Data Structure}
-There was multiple approaches to store the matrix A, the most basic one was
-storing the values in a adjacency matrix however as the matrix A is a sparse one
-we opted to store it in a compressed sparse row (CSR). The CSR allows to store
-just the non-zero values in a single array making this a good choice in terms of
-caching since all the values are stored in adjancent memory positions
+There were multiple approaches to store matrix A, the most basic one was
+storing the values in a full matrix however as matrix A is sparse
+we opted to store it as compressed sparse row (CSR) matrix. A CSR only stores
+non-zero values in a single array making this a good choice in terms of
+caching since all the values are stored in adjacent memory positions.
+
+The other matrices were left as full matrices since they needed to be indexed in
+$O(1)$ time and a CSR does not permit this.
 
 \section{Matrix B multiplication}
-The new matrix B is calculated in every iteration however since the only
-positions that change are the ones who are different from zero in Matrix A we
-only multiply specific positions instead of the full matrix.
-\section{Serial Vers}
+A new matrix B needs to be calculated in every iteration, however, since the only
+positions of matrix B that are needed in each iteration are the ones that
+coincide with the non zero elements of matrix A, we optimized the code such that
+only these positions are calculated.
 
-\section{Problem}
+Since the full matrix B is needed for the final output, after the iterations are
+done the full matrix B is calculated.
 
 \section{Solution}
 
 %very wip
 %TODO divide into smaller sections
 
-%the approach used for parallelization
-%what decomposition was used
-%what were the synchronization concerns and why
 %how was load balancing addressed -> iter_l chunks?
-%what are the performance results, and are they what you expected
 
 %im noob pls add paragraph here
 
-The approach we took for parallelization was quite methodic. First was to
-optimize as far as we could the sequential version. We believed that the
-optimizations could help the parallelization process. Second was to identify
-CPU-heavy tasks that could be  parallelizable. Considering this, the sections
-identified were the calculations of the three matrices: B, L and R.  We started
-by parallelizing the calculation of matrix B, as it is considerably easier than
-the others. This parallelization could be easily done because there's no data
-dependencies within the calculation. Considering this, the parallelization was
-done on the outer for loop of the matrix calculation, where the rows are
-distribitued for the threads. After dealing with the easilly parallelizable
-sections, we started to take a look into the code for calculating the L and R
-matrices. Due to the optimizations performed in the sequential version, there
-was no race conditions in these calculations. %explain!!!
-To parallelize the calculation of the R matrix, the same tecnhique used in the
-matrix B calculation was used: parallelize the outer loop. In all cases, trying
-to parallelize the most inner loop only brought a time loss when comparing to
-the outer loop parallelization.  This was most likely caused by the overhead of
-calling threads more frequently.
-%TODO parallelization of L calc
-For both calculations of matrix L and R, the decomposition was the same way it
-was done for matrix B's calculation, by distributing the rows for the threads.
-for the threads.
+The approach we took for parallelization was quite methodical. First we opted to
+optimize the sequential version as far as we could. We experimented with using
+\textit{openMP} in the inner loops but it always made the program very slow, even slower
+than the sequential version.
 
-%...
+\subsection{Matrix B}
 
-As for the scheduling, using dynamic brought a better speedup in some cases, but
-also made some instances slower. While using static scheduling, the slower
-instances have a common characteristic: the A matrix has some rows which have
-substantially more elements than others.  This translated in a bad load
-balacing, as some threads will have to wait for the one dealing with the bigger
-rows.
-%Taking this in consideration, the decision to keep a static schedule
-%was made. keeping here not to forget to add better conclusion
+As mentioned before there are two versions of the calculation. The simplest one
+is the \texttt{full} one. Where each thread gets a distinct row and therefore
+there are no race conditions possible.
+\begin{minted}{c}
+#pragma omp parallel for
+for (size_t i = 0; i < l->rows; i++)
+    for (size_t j = 0; j < r->columns; ++j)
+        for (size_t k = 0; k < l->columns; ++k)
+            // only write to shared memory: two threads never have the same i
+            *MATRIX_AT(b, i, j) += *MATRIX_AT(l, i, k) * *MATRIX_AT(r, k, j);
+\end{minted}
 
+For the second version of we also have guarantees of no data races because each
+thread gets a chunk of the indices of A that do not overlap.
+\begin{minted}{c}
+Item const* const end = a->items + a->current_items;
+#pragma omp parallel for
+for (Item const* iter = a->items; iter < end; ++iter)
+    double bij = 0.0;
+    for (size_t k = 0; k < l->columns; k++)
+        bij += *MATRIX_AT(l, iter->row, k) * *MATRIX_AT(r, k, iter->column);
+    // only write to shared memory: two threads never have the same iter->row
+    *MATRIX_AT(matrix, iter->row, iter->column) = bij;
+\end{minted}
 
-%...
+\subsection{Matrix R}
+
+The calculation of matrix R was the easiest to parallelize, since, from the
+sequential version, the top level for loop was over the rows of R we could
+distribute theses rows over the threads and since the only write to shared
+memory happens to R in distinct rows we have the guarantee that there are no
+race conditions.
+
+\begin{minted}{c}
+#pragma omp parallel for
+for (size_t k = 0; k < r->rows; k++)
+    Item const* iter = // ...
+    Item const* const end = // ...
+    for (size_t column = 0; column < r->columns; column++)
+        double aux = // sum of deltas of this column of A
+        // only write to shared memory: two threads never have the same k
+        *MATRIX_AT(aux_r, k, column) =
+            *MATRIX_AT(r, k, column) - alpha * aux;
+\end{minted}
+
+\subsection{Matrix L}
+
+Matrix L was also simple to parallelize once we figured out how to split the
+rows of A between the threads. Initially we had openmp parallelize a for loop
+over the rows of A but this was error prone and inefficient. So we decided to
+distribuite the rows manually. This resulted in a minor speedup.
+
+In terms of race conditions the same reasoning applies. The only write to shared
+memory depends on a variable that is private to each thread.
+
+\begin{minted}{c}
+#pragma omp parallel
+{// Each thread figures out which rows of A it will operate on
+    Item const* (iter, end) = // ...
+    while (iter != end && iter->row < row_end) // for each row of A
+        for (size_t k = 0; k < l->columns; k++)
+            double aux = // sum of deltas for this row of a
+            // only write to shared memory: two threads never have the same row
+            *MATRIX_AT(aux_l, row, k) =
+                *MATRIX_AT(l, row, k) - alpha * aux;
+}
+\end{minted}
+
+\section{Speedup}
+Disregarding the small instances, the speed up obtained, using 4 physical cores,
+was close to 3x the serial version. Sometimes even reaching 3.5 times speed up
+on some instances.
+
+As for the scheduling, using guided brought a better speedup in some cases, but
+also made some instances slower. The difference, however, was negligible.
+
+The instances where guided was slightly better were the ones where the number of
+non zero elements in matrix A were not evenly distributed between rows, so we
+attribute the minimal difference to the fact that this unbalance of was also
+minimal in all instances.
+
+For these reasons we decided it was best to keep the guided version as it is more
+resilient to possible unbalanced instances without incurring a significant cost
+to the balanced ones.
+
+\begin{figure}[H]
+    \centering
+        \includegraphics[width=\textwidth]{./ML1M.png}
+        \caption{Number of non zero elements in each row of Matrix A.
+        Example where some imbalance can be seen.}
+\end{figure}
+
 
 It is also important to note that, in bigger instances, the parsing creates a
-considerable overhead, making the speedup significantly worse.
+significant overhead, making the speed up less noticeable.
 
 %still rough
 After the optimizations, the performance for the sequential version fitted
@@ -97,6 +160,12 @@ introduced by the parallelization process. Excluding the instances where the
 parsing creates an overhead, the speedups were quite good, getting between X
 %TODO
 and 3.5.
+
+\section{Future Work}
+In a future implementation the parser could be made parallel to see if could
+bring further improvements. This seems unlikely as the chunks of the parsed
+input need to be aggregated at the end of the parsing and this could prove to be
+too much to compensate the overhead it might bring to smaller instances.
 
 
 %ADD PRETTY GRAPHS!
