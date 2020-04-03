@@ -104,7 +104,7 @@ for (size_t k = 0; k < r->rows; k++)
 Matrix L was also simple to parallelize once we figured out how to split the
 rows of A between the threads. Initially we had \textit{openMP} parallelize a for loop
 over the rows of A but this was error prone and inefficient. So we decided to
-distribuite the rows manually. This resulted in a minor speed up.
+distribute the rows manually. This resulted in a minor speed up.
 
 In terms of race conditions the same reasoning applies. The only write to shared
 memory depends on a variable that is private to each thread.
