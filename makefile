@@ -43,6 +43,7 @@ RFLAGS = -O2 -march=native -DNDEBUG
 override CFLAGS += -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla -flto
 PROG = recomender
 OMPFLAGS = -fopenmp -Werror=unknown-pragmas
+CC = mpicc
 
 all: debug _rename
 
@@ -117,6 +118,7 @@ __release_dir:
 _rename:
 	cp $(DEBUG_DIR_SERIAL)/$(PROG) matFact
 	cp $(DEBUG_DIR_OPENMP)/$(PROG) matFact-omp
+	cp $(DEBUG_DIR_MPI)/$(PROG) matFact-mpi
 
 print-% : ; @echo $* = $($*)
 
