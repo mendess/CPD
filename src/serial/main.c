@@ -22,10 +22,11 @@ int main(int argc, char const** argv) {
             break;
     }
 
-    printf("Number of rows: %d\n", matrices.a_prime.row_lengths[0]);
+/*
     Matrix b = iter(&matrices);
     print_output(&matrices, &b);
     matrices_free(&matrices);
     matrix_free(&b);
+    */
     return EXIT_SUCCESS;
 }

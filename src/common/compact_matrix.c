@@ -35,6 +35,7 @@ cmatrix_make(size_t rows, size_t const columns, size_t const num_elems) {
     return (CompactMatrix){.items = malloc(sizeof(Item) * num_elems),
                            .row_lengths = calloc(sizeof(size_t), rows),
                            .total_items = num_elems,
+                           .row_pos = calloc(sizeof(size_t), (rows + 1)),
                            .current_items = 0,
                            .n_rows = rows,
                            .n_cols = columns};
@@ -42,13 +43,28 @@ cmatrix_make(size_t rows, size_t const columns, size_t const num_elems) {
 
 void cmatrix_add(
     CompactMatrix* const m,
-    size_t const row,
+    size_t row,
     size_t const column,
     double const value) {
     assert(m->current_items < m->total_items);
     ++m->row_lengths[row];
-    m->items[m->current_items++] =
+    m->items[m->current_items] =
         (Item){.value = value, .row = row, .column = column};
+    if(m->current_items > 0 && m->items[m->current_items].row != m->items[m->current_items - 1].row){
+        m->row_pos[row] = m->current_items;
+        if(row>1 && m->row_pos[row - 1] == 0){
+            row = row - 1;
+            while(m->row_lengths[row] == 0 && row >= 0){
+                if(m->row_pos[row] == 0){
+                    m->row_pos[row] = m->current_items;
+                } else {
+                    break;
+                }
+                row--;
+            }
+        }
+    }
+    m->current_items++;
 }
 
 void cmatrix_print(CompactMatrix const* m) {

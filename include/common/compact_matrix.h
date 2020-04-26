@@ -15,6 +15,7 @@ typedef struct {
     size_t* row_lengths;
     size_t total_items;
     size_t current_items;
+    size_t* row_pos;
     size_t n_rows;
     size_t n_cols;
 } CompactMatrix;

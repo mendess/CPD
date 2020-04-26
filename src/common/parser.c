@@ -190,8 +190,14 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
 
     CompactMatrix a_prime =
         cmatrix_make(header.users, header.items, header.non_zero_elems);
+    a_prime.row_pos[0] = 0;
+    a_prime.row_pos[a_prime.n_rows] = header.non_zero_elems;
     CompactMatrix a_prime_transpose =
         cmatrix_make(header.items, header.users, header.non_zero_elems);
+    write(2,"test\n", 6);
+    a_prime_transpose.row_pos[0] = 0;
+    a_prime_transpose.row_pos[a_prime_transpose.n_rows] = header.non_zero_elems;
+
     error = parse_matrix_a(
         &content_iter, header.non_zero_elems, &a_prime, &a_prime_transpose);
     free(contents);
