@@ -64,3 +64,4 @@ Report.pdf
 *.html
 *.bbl
 *.blg
+.ccls-cache

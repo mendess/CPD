@@ -13,7 +13,7 @@ void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
     for (size_t i = 0; i < l->rows; i++) {
         for (size_t j = 0; j < r->columns; ++j) {
             for (size_t k = 0; k < l->columns; ++k) {
-                *MATRIX_AT(matrix, i, j) +=
+                *MATRIX_AT_MUT(matrix, i, j) +=
                     *MATRIX_AT(l, i, k) * *MATRIX_AT(r, k, j);
             }
         }
@@ -30,7 +30,7 @@ void matrix_b(
         for (size_t k = 0; k < l->columns; k++) {
             bij += *MATRIX_AT(l, iter->row, k) * *MATRIX_AT(r, k, iter->column);
         }
-        *MATRIX_AT(matrix, iter->row, iter->column) = bij;
+        *MATRIX_AT_MUT(matrix, iter->row, iter->column) = bij;
         ++iter;
     }
 }
@@ -55,7 +55,7 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
                 ++line_iter;
                 ++counter;
             }
-            *MATRIX_AT(aux_l, row, k) =
+            *MATRIX_AT_MUT(aux_l, row, k) =
                 *MATRIX_AT(&matrices->l, row, k) - matrices->alpha * aux;
         }
         iter += counter;
@@ -79,7 +79,7 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
                     *MATRIX_AT(&matrices->l, row, k));
                 ++iter;
             }
-            *MATRIX_AT(aux_r, k, column) =
+            *MATRIX_AT_MUT(aux_r, k, column) =
                 *MATRIX_AT(&matrices->r, k, column) - matrices->alpha * aux;
         }
     }

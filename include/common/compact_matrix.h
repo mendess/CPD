@@ -13,7 +13,8 @@ typedef struct {
 typedef struct {
     Item* items;
     size_t* row_lengths;
-    size_t total_items;
+    // This field is used to maintain invariants. DO NOT USE PLS K THKS
+    size_t _total_items;
     size_t current_items;
     size_t* row_pos;
     size_t n_rows;

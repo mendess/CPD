@@ -64,7 +64,7 @@ static size_t scan_line(
         switch (*format) {
             case DOUBLE: {
                 double* const arg = va_arg(args, double*);
-                char* end;
+                char* end = NULL;
                 *arg = strtod(s_iter->str, &end);
                 if (*arg == 0.0 && end == s_iter->str) goto END;
                 s_iter->str = end;
@@ -72,7 +72,7 @@ static size_t scan_line(
             }
             case SIZE_T: {
                 size_t* const arg = va_arg(args, size_t*);
-                char* end;
+                char* end = NULL;
                 *arg = strtoull(s_iter->str, &end, 10);
                 if (*arg == 0 && end == s_iter->str) goto END;
                 s_iter->str = end;
@@ -206,9 +206,11 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
         cmatrix_free(&a_prime_transpose);
         return error;
     }
+    // Transposed
     Matrix l = matrix_make(header.users, header.features);
     Matrix r = matrix_make(header.features, header.items);
     cmatrix_sort(&a_prime_transpose);
+    // TODO: passar para o iter
     random_fill_LR(header.features, &l, &r);
     *matrices = (Matrices){
         .num_iterations = header.num_iterations,

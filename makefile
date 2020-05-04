@@ -101,7 +101,7 @@ bench:
 	./run_tests.sh bench
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) matFact matFact-omp matFact-mpi
 
 __debug_dir:
 	@mkdir -p $(DEBUG_DIR_COMMON)

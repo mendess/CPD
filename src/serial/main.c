@@ -22,11 +22,9 @@ int main(int argc, char const** argv) {
             break;
     }
 
-/*
     Matrix b = iter(&matrices);
     print_output(&matrices, &b);
     matrices_free(&matrices);
     matrix_free(&b);
-    */
     return EXIT_SUCCESS;
 }

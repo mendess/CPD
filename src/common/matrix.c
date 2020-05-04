@@ -8,9 +8,10 @@
 #define RAND01 ((double) random() / (double) RAND_MAX)
 
 Matrix matrix_make(size_t const rows, size_t const columns) {
-    return (Matrix){.rows = rows,
-                    .columns = columns,
-                    .data = calloc(rows * columns, sizeof(double))};
+    return (Matrix){
+        .rows = rows,
+        .columns = columns,
+        .data = calloc(rows * columns, sizeof(double))};
 }
 
 Matrix matrix_clone(Matrix const* const other) {
@@ -36,8 +37,8 @@ MatrixIter matrix_iter_row(Matrix const* const m, size_t const row) {
 }
 
 MatrixIter matrix_iter_full(Matrix const* const m) {
-    return (MatrixIter){.iter = m->data,
-                        .end = m->data + (m->rows * m->columns)};
+    return (MatrixIter){
+        .iter = m->data, .end = m->data + (m->rows * m->columns)};
 }
 
 MatrixIterMut matrix_iter_row_mut(Matrix* const m, size_t const row) {
@@ -48,8 +49,8 @@ MatrixIterMut matrix_iter_row_mut(Matrix* const m, size_t const row) {
 }
 
 MatrixIterMut matrix_iter_full_mut(Matrix* const m) {
-    return (MatrixIterMut){.iter = m->data,
-                           .end = m->data + (m->rows * m->columns)};
+    return (MatrixIterMut){
+        .iter = m->data, .end = m->data + (m->rows * m->columns)};
 }
 
 void matrix_print(Matrix const* m) {
@@ -61,18 +62,17 @@ void matrix_print(Matrix const* m) {
     }
 }
 
+void random_fill_LT_R(size_t const nF, Matrix* const l, Matrix* const r) {
+    srandom(0);
 
-static inline void swap(double* a, double* b) {
-    double tmp = *a;
-    *a = *b;
-    *b = tmp;
-}
-
-void matrix_transpose(Matrix* m) {
-    for (size_t i = 0; i < m->rows; ++i) {
-        for(size_t j = 0; j < i; ++j) {
-            swap(MATRIX_AT(m, i, j), MATRIX_AT(m, j, i));
+    for (size_t i = 0; i < l->columns; ++i) {
+        for (size_t j = 0; j < l->rows; ++j) {
+            *MATRIX_AT_MUT(l, j, i) = RAND01 / (double) nF;
         }
+    }
+
+    for (MatrixIterMut i = matrix_iter_full_mut(r); i.iter != i.end; ++i.iter) {
+        *i.iter = RAND01 / (double) nF;
     }
 }
 
