@@ -1,29 +1,14 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "matFact.h"
+#include "cmatrix.h"
+#include "mpi_size_t.h"
 #include "parser.h"
+
+#include <assert.h>
 #include <mpi.h>
 #include <stdint.h>
 #include <limits.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-int mpi_send_items(
-    Item const* const items, int len, int dest, int tag, MPI_Comm comm) {
-    unsigned char* buf = (unsigned char*) items;
-    int buf_len = len * sizeof(Item);
-    return MPI_Send(buf, buf_len, MPI_UNSIGNED_CHAR, dest, tag, comm);
-}
-
-int mpi_recv_items(
-    Item* items,
-    int len,
-    int source,
-    int tag,
-    MPI_Comm comm,
-    MPI_Status* status) {
-    unsigned char* buf = (unsigned char*) items;
-    int buf_len = len * sizeof(Item);
-    return MPI_Recv(buf, buf_len, MPI_UNSIGNED_CHAR, source, tag, comm, status);
-}
 #if SIZE_MAX == UCHAR_MAX
    #define my_MPI_SIZE_T MPI_UNSIGNED_CHAR
 #elif SIZE_MAX == USHRT_MAX
@@ -37,13 +22,13 @@ int mpi_recv_items(
 #else
    #error "what is happening here?"
 #endif
-int main(int argc, char const** argv) {
+int main(int argc, char ** argv) {
     if (argc < 2) {
         fprintf(stderr, "Usage: %s [filename]\n", argv[0]);
         return EXIT_FAILURE;
     }
     int me, nprocs;
-    MPI_Init(&argc, NULL);
+    MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     Matrices matrices;
@@ -149,5 +134,7 @@ int main(int argc, char const** argv) {
         printf("Row %d starts at position %ld\n", i, matrices.a_prime.row_pos[i]);
     }
     */
+
     MPI_Finalize();
+    return 0;
 }

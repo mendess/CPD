@@ -23,6 +23,8 @@ void matrix_print(Matrix const* m);
 
 void matrix_free(Matrix* m);
 
+void matrix_transpose(Matrix* m);
+
 typedef struct MatrixIter {
     double const* iter;
     double const* const end;
@@ -52,10 +54,12 @@ typedef struct Matrices {
     CompactMatrix a_prime_transpose;
     Matrix l;
     Matrix r;
+    Matrix l_trans;
 } Matrices;
 
 void matrices_free(Matrices* m);
 
 void print_output(Matrices const* const matrices, Matrix const* const b);
+
 
 #endif // MATRIX_H

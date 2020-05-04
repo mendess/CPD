@@ -61,6 +61,21 @@ void matrix_print(Matrix const* m) {
     }
 }
 
+
+static inline void swap(double* a, double* b) {
+    double tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+void matrix_transpose(Matrix* m) {
+    for (size_t i = 0; i < m->rows; ++i) {
+        for(size_t j = 0; j < i; ++j) {
+            swap(MATRIX_AT(m, i, j), MATRIX_AT(m, j, i));
+        }
+    }
+}
+
 void random_fill_LR(size_t const nF, Matrix* const l, Matrix* const r) {
     srandom(0);
 
