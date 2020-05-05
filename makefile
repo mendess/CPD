@@ -41,6 +41,7 @@ endif
 RFLAGS = -O2 -march=native -DNDEBUG
 
 override CFLAGS += -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla -flto
+MPIFLAGS = `mpicc --showme:compile` `mpicc --showme:link`
 PROG = recomender
 OMPFLAGS = -fopenmp -Werror=unknown-pragmas
 CC = mpicc

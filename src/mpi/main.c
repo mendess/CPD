@@ -2,6 +2,8 @@
 #include "matFact.h"
 #include "mpi_size_t.h"
 #include "parser.h"
+#include "debug.h"
+
 
 #include <assert.h>
 #include <limits.h>
@@ -9,6 +11,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#define NSIZE_T 11
 
 int main(int argc, char** argv) {
     if (argc < 2) {
@@ -38,7 +42,7 @@ int main(int argc, char** argv) {
         // printf("Num of iterations node 0: %zu\n", matrices.num_iterations);
         // printf("Node 0 - l rows %zu \n", matrices.l.rows);
 
-        size_t send_size_t[] = {
+        size_t send_size_t[NSIZE_T] = {
             matrices.num_iterations,
             matrices.a._total_items,
             matrices.a.n_rows,
@@ -53,14 +57,11 @@ int main(int argc, char** argv) {
         for (int i = 1; i < nprocs; i++) {
             MPI_Send(
                 send_size_t,
-                sizeof send_size_t,
+                NSIZE_T,
                 MPI_SIZE_T,
                 i,
                 0,
                 MPI_COMM_WORLD);
-            // printf("Node %d will receive %d elements\n", i,
-            // matrices.a.row_pos[end + 1] - 1 -
-            // matrices.a.row_pos[start]);
             mpi_send_items(
                 matrices.a.items,
                 matrices.a.current_items,
@@ -89,32 +90,11 @@ int main(int argc, char** argv) {
                 MPI_COMM_WORLD);
             MPI_Send(&matrices.alpha, 1, MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
         }
-
-        /*
-        int lines_per_node = matrices.l.n_rows / nprocs;
-        int lines_per_node_transpose = matrices.r.n_rows / nprocs;
-        int prime_rest = matrices.a.n_rows % nprocs;
-        int transpose_rest = matrices.a_transpose.n_rows % nprocs;
-        printf("Number of lines %d\n", matrices.a.n_rows);
-        printf("Lines per node %d\n", lines_per_node);
-        printf("Lines for node 0: start-%d end-%d\n", lines_per_node *
-        (nprocs - 1), matrices.l.n_rows - 1); for(int i = 1; i < nprocs; i++){
-            int start = lines_per_node * (i - 1);
-            int end = lines_per_node*i - 1;
-            printf("Lines for node %d: start-%d end-%d\n", i, start, end);
-            int n_elems = matrices.l.row_pos[end + 1] - 1 -
-        matrices.l.row_pos[start]; MPI_Send(&n_elems, 1, MPI_INT, i, 0,
-        MPI_COMM_WORLD);
-            //printf("Node %d will receive %d elements\n", i,
-        matrices.a.row_pos[end + 1] - 1 -
-        matrices.a.row_pos[start]);
-        }
-        */
     } else {
-        size_t send_size_t[11];
+        size_t send_size_t[NSIZE_T];
         MPI_Recv(
             send_size_t,
-            sizeof send_size_t,
+            NSIZE_T,
             MPI_SIZE_T,
             0,
             0,
@@ -134,8 +114,7 @@ int main(int argc, char** argv) {
         // printf("Num of iterations %zu\n", matrices.num_iterations);
         // printf("Matrix l num of rows %zu \n", matrices.l.rows);
 
-        matrices.a.items =
-            malloc(sizeof(Item) * matrices.a.current_items);
+        matrices.a.items = malloc(sizeof(Item) * matrices.a.current_items);
         matrices.a_transpose.items =
             malloc(sizeof(Item) * matrices.a_transpose.current_items);
 
@@ -199,16 +178,13 @@ int main(int argc, char** argv) {
     matrices.a.row_pos[i]);
     }
     */
-    Matrix b = iter(&matrices, nprocs, me);
-    fprintf(stderr, "%d lmao\n", me);
-    print_output(&matrices, &b);
-    fprintf(stderr, "%d lmao\n", me);
+    if (me == 0) {
+        Matrix b = iter(&matrices, nprocs, me);
+        print_output(&matrices, &b);
+        matrix_free(&b);
+    }
     matrices_free(&matrices);
-    fprintf(stderr, "%d lmao\n", me);
-    matrix_free(&b);
-    fprintf(stderr, "%d lmao\n", me);
 
     MPI_Finalize();
-    fprintf(stderr, "%d lmao\n", me);
     return 0;
 }

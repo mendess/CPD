@@ -8,6 +8,11 @@
 
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
+typedef struct Slice {
+    Item* start;
+    Item* end;
+} Slice;
+
 void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
     assert(l->columns == r->rows);
     for (size_t i = 0; i < l->rows; i++) {
@@ -35,7 +40,9 @@ void matrix_b(
     }
 }
 
-void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
+void next_iter_l(
+    Matrices const* matrices, Slice a, Matrix* aux_l, Matrix const* b) {
+    (void) a;
     Item const* iter = matrices->a.items;
     Item const* const end = iter + matrices->a.current_items;
 
@@ -55,6 +62,7 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
                 ++line_iter;
                 ++counter;
             }
+            // l is transposed
             *MATRIX_AT_MUT(aux_l, row, k) =
                 *MATRIX_AT(&matrices->l, row, k) - matrices->alpha * aux;
         }
@@ -62,7 +70,9 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
     }
 }
 
-void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
+void next_iter_r(
+    Matrices const* matrices, Slice a, Matrix* aux_r, Matrix const* b) {
+    (void) a;
     for (size_t k = 0; k < matrices->r.rows; k++) {
         Item const* iter = matrices->a_transpose.items;
         Item const* const end = iter + matrices->a_transpose.current_items;
@@ -75,6 +85,7 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
                 aux += DELTA(
                     iter->value,
                     *MATRIX_AT(b, row, column),
+                    // l is transposed
                     *MATRIX_AT(&matrices->l, row, k));
                 ++iter;
             }
@@ -90,14 +101,45 @@ static inline void swap(Matrix* a, Matrix* b) {
     *b = tmp;
 }
 
-Matrix iter(Matrices* matrices) {
+static inline size_t
+start_chunk(size_t const proc_id, int const nprocs, size_t const num_iters) {
+    size_t const rem = (num_iters % nprocs);
+    size_t const x = proc_id * (num_iters - rem) / nprocs;
+    return x + (proc_id < rem ? proc_id : rem);
+}
+
+static inline Slice split(CompactMatrix* a, int proc_id, int nprocs) {
+    size_t start = start_chunk(proc_id, nprocs, a->n_rows);
+    size_t end = start_chunk(proc_id + 1, nprocs, a->n_rows);
+    fprintf(stderr, "Node %d starts ends [%zu, %zu[\n", proc_id, start, end);
+    Item* start_p = a->items + a->row_pos[start];
+    Item* end_p = a->items + a->row_pos[end];
+    return (Slice){.start = start_p, .end = end_p};
+}
+
+Matrix iter(Matrices* matrices, int nprocs, int me) {
+    if (me == 0) {
+        for (int i = 0; i < nprocs; i++) {
+            Slice s = split(&matrices->a, i, nprocs);
+            fprintf(
+                stderr,
+                "Node %d starts at (%zu, %zu) and ends at (%zu, %zu), len: "
+                "%zu\n",
+                i,
+                s.start->row,
+                s.start->column,
+                (s.end - 1)->row,
+                (s.end - 1)->column,
+                s.end - s.start);
+        }
+    }
     Matrix aux_l = matrix_clone(&matrices->l);
     Matrix aux_r = matrix_clone(&matrices->r);
     Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
     for (size_t i = 0; i < matrices->num_iterations; i++) {
         matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
-        next_iter_l(matrices, &aux_l, &b);
-        next_iter_r(matrices, &aux_r, &b);
+        next_iter_l(matrices, (Slice){NULL, NULL}, &aux_l, &b);
+        next_iter_r(matrices, (Slice){NULL, NULL}, &aux_r, &b);
         swap(&matrices->l, &aux_l);
         swap(&matrices->r, &aux_r);
     }

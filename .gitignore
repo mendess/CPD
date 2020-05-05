@@ -57,6 +57,7 @@ target/
 *.mats
 *.jpg
 matFact*
+!matFact.c
 *.toc
 *.aux
 *.log
@@ -65,3 +66,4 @@ Report.pdf
 *.bbl
 *.blg
 .ccls-cache
+.env

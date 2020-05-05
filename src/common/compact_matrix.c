@@ -90,7 +90,7 @@ static int item_compare(void const* a, void const* b) {
     Item const* b_ = b;
     if (a_->row < b_->row) {
         return -1;
-    } else if (a_->row > b_->column) {
+    } else if (a_->row > b_->row) {
         return 1;
     } else if (a_->column < b_->column) {
         return -1;
