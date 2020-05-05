@@ -25,6 +25,34 @@ Matrix matrix_clone(Matrix const* const other) {
     return new_m;
 }
 
+double const* matrix_at(Matrix const* a, size_t row, size_t column) {
+    if (row >= a->rows || column >= a->columns) {
+        fprintf(
+            stderr,
+            "Bounds: (%zu, %zu) access (%zu, %zu)",
+            a->rows,
+            a->columns,
+            row,
+            column);
+        assert(0);
+    }
+    return a->data + (row * a->columns + column);
+}
+
+double* matrix_at_mut(Matrix* a, size_t row, size_t column) {
+    if (row >= a->rows || column >= a->columns) {
+        fprintf(
+            stderr,
+            "Bounds: (%zu, %zu) access (%zu, %zu)",
+            a->rows,
+            a->columns,
+            row,
+            column);
+        assert(0);
+    }
+    return a->data + (row * a->columns + column);
+}
+
 void matrix_free(Matrix* m) {
     free(m->data);
 }

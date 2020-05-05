@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     Matrices matrices = {0};
 
     if (me == 0) {
-        ParserError error = parse_file(argv[1], &matrices);
+        ParserError error = parse_file_lt(argv[1], &matrices);
         switch (error) {
             case PARSER_ERROR_IO:
                 fputs("IO Error\n", stderr);
@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
             NULL);
         MPI_Recv(&matrices.alpha, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, NULL);
     }
-    random_fill_LR(&matrices.l, &matrices.r);
+    random_fill_LT_R(&matrices.l, &matrices.r);
     if (me == 0) {
         Matrix b = iter_mpi(&matrices, nprocs, me);
         print_output(&matrices, &b);

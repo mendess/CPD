@@ -29,7 +29,7 @@ ParserError parse_file_lt(char const* filename, Matrices* matrices) {
         return error;
     }
     // Transposed
-    Matrix lt = matrix_make(header.features, header.items);
+    Matrix lt = matrix_make(header.features, header.users);
     Matrix r = matrix_make(header.features, header.items);
     cmatrix_sort(&a_transpose);
     *matrices = (Matrices){

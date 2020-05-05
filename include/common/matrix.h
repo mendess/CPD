@@ -5,7 +5,7 @@
 
 #include <assert.h>
 #include <stddef.h>
-#ifndef NDEBUG
+#ifndef NO_ASSERT
 #    include <stdio.h>
 #endif
 
@@ -19,7 +19,7 @@ Matrix matrix_make(size_t rows, size_t columns);
 
 Matrix matrix_clone(Matrix const* other);
 
-#ifdef NDEBUG
+#ifdef NO_ASSERT
 #    define MATRIX_AT(m, row, column) \
         ((m)->data + ((row) * (m)->columns + (column)))
 #    define MATRIX_AT_MUT(m, row, column) \
@@ -28,34 +28,8 @@ Matrix matrix_clone(Matrix const* other);
 #    define MATRIX_AT(m, row, column) (matrix_at((m), (row), (column)))
 #    define MATRIX_AT_MUT(m, row, column) (matrix_at_mut((m), (row), (column)))
 
-static inline double const*
-matrix_at(Matrix const* a, size_t row, size_t column) {
-    if (a->rows < row && a->columns < column) {
-        fprintf(
-            stderr,
-            "Bounds: (%zu, %zu) access (%zu, %zu)",
-            a->rows,
-            a->columns,
-            row,
-            column);
-        assert(0);
-    }
-    return a->data + (row * a->columns + column);
-}
-
-static inline double* matrix_at_mut(Matrix* a, size_t row, size_t column) {
-    if (a->rows < row && a->columns < column) {
-        fprintf(
-            stderr,
-            "Bounds: (%zu, %zu) access (%zu, %zu)",
-            a->rows,
-            a->columns,
-            row,
-            column);
-        assert(0);
-    }
-    return a->data + (row * a->columns + column);
-}
+double const* matrix_at(Matrix const* a, size_t row, size_t column);
+double* matrix_at_mut(Matrix* a, size_t row, size_t column);
 #endif
 
 void matrix_print(Matrix const* m);
