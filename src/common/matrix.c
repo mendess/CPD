@@ -62,29 +62,29 @@ void matrix_print(Matrix const* m) {
     }
 }
 
-void random_fill_LT_R(size_t const nF, Matrix* const l, Matrix* const r) {
+void random_fill_LT_R(Matrix* const l, Matrix* const r) {
     srandom(0);
 
     for (size_t i = 0; i < l->columns; ++i) {
         for (size_t j = 0; j < l->rows; ++j) {
-            *MATRIX_AT_MUT(l, j, i) = RAND01 / (double) nF;
+            *MATRIX_AT_MUT(l, j, i) = RAND01 / (double) r->rows;
         }
     }
 
     for (MatrixIterMut i = matrix_iter_full_mut(r); i.iter != i.end; ++i.iter) {
-        *i.iter = RAND01 / (double) nF;
+        *i.iter = RAND01 / (double) r->rows;
     }
 }
 
-void random_fill_LR(size_t const nF, Matrix* const l, Matrix* const r) {
+void random_fill_LR(Matrix* const l, Matrix* const r) {
     srandom(0);
 
     for (MatrixIterMut i = matrix_iter_full_mut(l); i.iter != i.end; ++i.iter) {
-        *i.iter = RAND01 / (double) nF; // Why is this division being done?
+        *i.iter = RAND01 / (double) r->rows; // Why is this division being done?
     }
 
     for (MatrixIterMut i = matrix_iter_full_mut(r); i.iter != i.end; ++i.iter) {
-        *i.iter = RAND01 / (double) nF;
+        *i.iter = RAND01 / (double) r->rows;
     }
 }
 

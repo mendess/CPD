@@ -80,9 +80,9 @@ MatrixIterMut matrix_iter_row_mut(Matrix* m, size_t row);
 
 MatrixIterMut matrix_iter_full_mut(Matrix* m);
 
-void random_fill_LT_R(size_t const nF, Matrix* const l, Matrix* const r);
+void random_fill_LT_R(Matrix* const l, Matrix* const r);
 
-void random_fill_LR(size_t nF, Matrix* l, Matrix* r);
+void random_fill_LR(Matrix* l, Matrix* r);
 
 void matrix_clear(Matrix* m);
 

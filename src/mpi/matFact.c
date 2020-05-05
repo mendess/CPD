@@ -117,22 +117,9 @@ static inline Slice split(CompactMatrix* a, int proc_id, int nprocs) {
     return (Slice){.start = start_p, .end = end_p};
 }
 
-Matrix iter(Matrices* matrices, int nprocs, int me) {
-    if (me == 0) {
-        for (int i = 0; i < nprocs; i++) {
-            Slice s = split(&matrices->a, i, nprocs);
-            fprintf(
-                stderr,
-                "Node %d starts at (%zu, %zu) and ends at (%zu, %zu), len: "
-                "%zu\n",
-                i,
-                s.start->row,
-                s.start->column,
-                (s.end - 1)->row,
-                (s.end - 1)->column,
-                s.end - s.start);
-        }
-    }
+Matrix iter_mpi(Matrices* matrices, int nprocs, int me) {
+    (void) nprocs;
+    (void) me;
     Matrix aux_l = matrix_clone(&matrices->l);
     Matrix aux_r = matrix_clone(&matrices->r);
     Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);

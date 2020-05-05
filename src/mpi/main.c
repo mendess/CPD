@@ -1,9 +1,8 @@
 #include "cmatrix.h"
+#include "debug.h"
 #include "matFact.h"
 #include "mpi_size_t.h"
 #include "parser.h"
-#include "debug.h"
-
 
 #include <assert.h>
 #include <limits.h>
@@ -55,13 +54,7 @@ int main(int argc, char** argv) {
             matrices.r.rows,
             matrices.r.columns};
         for (int i = 1; i < nprocs; i++) {
-            MPI_Send(
-                send_size_t,
-                NSIZE_T,
-                MPI_SIZE_T,
-                i,
-                0,
-                MPI_COMM_WORLD);
+            MPI_Send(send_size_t, NSIZE_T, MPI_SIZE_T, i, 0, MPI_COMM_WORLD);
             mpi_send_items(
                 matrices.a.items,
                 matrices.a.current_items,
@@ -92,14 +85,7 @@ int main(int argc, char** argv) {
         }
     } else {
         size_t send_size_t[NSIZE_T];
-        MPI_Recv(
-            send_size_t,
-            NSIZE_T,
-            MPI_SIZE_T,
-            0,
-            0,
-            MPI_COMM_WORLD,
-            NULL);
+        MPI_Recv(send_size_t, NSIZE_T, MPI_SIZE_T, 0, 0, MPI_COMM_WORLD, NULL);
         matrices.num_iterations = send_size_t[0];
         matrices.a.current_items = send_size_t[1];
         matrices.a.n_rows = send_size_t[2];
@@ -178,8 +164,9 @@ int main(int argc, char** argv) {
     matrices.a.row_pos[i]);
     }
     */
+    random_fill_LR(&matrices.l, &matrices.r);
     if (me == 0) {
-        Matrix b = iter(&matrices, nprocs, me);
+        Matrix b = iter_mpi(&matrices, nprocs, me);
         print_output(&matrices, &b);
         matrix_free(&b);
     }

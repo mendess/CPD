@@ -22,6 +22,7 @@ int main(int argc, char const** argv) {
             break;
     }
 
+    random_fill_LR(&matrices.l, &matrices.r);
     Matrix b = iter(&matrices);
     print_output(&matrices, &b);
     matrices_free(&matrices);

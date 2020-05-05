@@ -210,8 +210,6 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
     Matrix l = matrix_make(header.users, header.features);
     Matrix r = matrix_make(header.features, header.items);
     cmatrix_sort(&a_transpose);
-    // TODO: passar para o iter
-    random_fill_LR(header.features, &l, &r);
     *matrices = (Matrices){
         .num_iterations = header.num_iterations,
         .alpha = header.alpha,
