@@ -1,7 +1,7 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 #define _DEFAULT_SOURCE
-#include "compact_matrix.h"
+#include "common/compact_matrix.h"
 
 #include <assert.h>
 #include <stddef.h>

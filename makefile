@@ -1,5 +1,6 @@
 SOURCES_DIR = src
 BUILD_DIR  = target
+HEADERS = include
 HEADERS_COMMON = include/common
 HEADERS_SERIAL = include/serial
 HEADERS_OPENMP = include/openmp
@@ -51,49 +52,49 @@ all: debug _rename
 debug: debug_serial debug_openmp debug_mpi
 
 debug_serial: __debug_dir $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL)
-	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL) $(DFLAGS) -o $(DEBUG_DIR_SERIAL)/$(PROG)
+	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL) $(DFLAGS) -o $(DEBUG_DIR_SERIAL)/$(PROG)
 
 debug_openmp: __debug_dir $(OBJ_DEBUG) $(OBJ_DEBUG_OPENMP)
-	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP) $(DFLAGS) -o $(DEBUG_DIR_OPENMP)/$(PROG) $(OMPFLAGS)
+	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP) $(DFLAGS) -o $(DEBUG_DIR_OPENMP)/$(PROG) $(OMPFLAGS)
 
 debug_mpi: __debug_dir $(OBJ_DEBUG) $(OBJ_DEBUG_MPI)
-	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI)    $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_MPI)    $(DFLAGS) -o $(DEBUG_DIR_MPI)/$(PROG)
+	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_MPI) $(DFLAGS) -o $(DEBUG_DIR_MPI)/$(PROG)
 
 release: release_serial release_openmp release_mpi
 
 release_serial: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL)
-	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL) $(RFLAGS) -o $(RELEASE_DIR_SERIAL)/$(PROG)
+	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL) $(RFLAGS) -o $(RELEASE_DIR_SERIAL)/$(PROG)
 
 release_openmp: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP)
-	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP) $(RFLAGS) -o $(RELEASE_DIR_OPENMP)/$(PROG) $(OMPFLAGS)
+	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP) $(RFLAGS) -o $(RELEASE_DIR_OPENMP)/$(PROG) $(OMPFLAGS)
 
 release_mpi: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_MPI)
-	$(CC) $(CFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI)    $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_MPI)    $(RFLAGS) -o $(RELEASE_DIR_MPI)/$(PROG)
+	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_MPI) $(RFLAGS) -o $(RELEASE_DIR_MPI)/$(PROG)
 
 $(DEBUG_DIR_COMMON)/%.o: $(SOURCES_COMMON)
-	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_COMMON)/%, $(SOURCES_COMMON_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS_COMMON) -c -o $@
+	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_COMMON)/%, $(SOURCES_COMMON_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS) -c -o $@
 
 $(DEBUG_DIR_SERIAL)/%.o: $(SOURCES_SERIAL) $(SOURCES_COMMON)
-	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_SERIAL)/%, $(SOURCES_SERIAL_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) -c -o $@
+	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_SERIAL)/%, $(SOURCES_SERIAL_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS) -c -o $@
 
 $(DEBUG_DIR_OPENMP)/%.o: $(SOURCES_OPENMP) $(SOURCES_COMMON)
-	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_OPENMP)/%, $(SOURCES_OPENMP_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) -c -o $@ $(OMPFLAGS)
+	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_OPENMP)/%, $(SOURCES_OPENMP_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS) -c -o $@ $(OMPFLAGS)
 
 $(DEBUG_DIR_MPI)/%.o: $(SOURCES_MPI) $(SOURCES_COMMON)
-	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_MPI)/%, $(SOURCES_MPI_DIR)/%, $@))       $(CFLAGS) $(DFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI)    -c -o $@
+	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_MPI)/%, $(SOURCES_MPI_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS) -c -o $@
 
 
 $(RELEASE_DIR_COMMON)/%.o: $(SOURCES_COMMON)
-	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_COMMON)/%, $(SOURCES_COMMON_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -c -o $@
+	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_COMMON)/%, $(SOURCES_COMMON_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS) -c -o $@
 
 $(RELEASE_DIR_SERIAL)/%.o: $(SOURCES_SERIAL) $(SOURCES_COMMON)
-	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_SERIAL)/%, $(SOURCES_SERIAL_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_SERIAL) -c -o $@
+	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_SERIAL)/%, $(SOURCES_SERIAL_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS) -c -o $@
 
 $(RELEASE_DIR_OPENMP)/%.o: $(SOURCES_OPENMP) $(SOURCES_COMMON)
-	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_OPENMP)/%, $(SOURCES_OPENMP_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_OPENMP) -c -o $@ $(OMPFLAGS)
+	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_OPENMP)/%, $(SOURCES_OPENMP_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS) -c -o $@ $(OMPFLAGS)
 
 $(RELEASE_DIR_MPI)/%.o: $(SOURCES_MPI) $(SOURCES_COMMON)
-	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_MPI)/%, $(SOURCES_MPI_DIR)/%, $@))       $(CFLAGS) $(RFLAGS) -I$(HEADERS_COMMON) -I$(HEADERS_MPI) -c -o $@
+	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_MPI)/%, $(SOURCES_MPI_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS) -I$(HEADERS_MPI) -c -o $@
 
 test:
 	./run_tests.sh

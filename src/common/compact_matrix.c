@@ -1,4 +1,4 @@
-#include "compact_matrix.h"
+#include "common/compact_matrix.h"
 
 #include <stdio.h>
 #include <stdlib.h>

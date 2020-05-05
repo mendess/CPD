@@ -1,5 +1,5 @@
-#include "matFact.h"
-#include "parser.h"
+#include "serial/matFact.h"
+#include "common/parser.h"
 
 #include <stdio.h>
 #include <stdlib.h>

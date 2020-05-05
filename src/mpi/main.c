@@ -1,8 +1,8 @@
-#include "cmatrix.h"
-#include "debug.h"
-#include "matFact.h"
-#include "mpi_size_t.h"
-#include "parser.h"
+#include "common/parser.h"
+#include "mpi/cmatrix.h"
+#include "mpi/debug.h"
+#include "mpi/matFact.h"
+#include "mpi/mpi_size_t.h"
 
 #include <assert.h>
 #include <limits.h>

@@ -1,7 +1,7 @@
 #ifndef MPI_CMATRIX_H
 #define MPI_CMATRIX_H
 
-#include "compact_matrix.h"
+#include "common/compact_matrix.h"
 
 #include <mpi.h>
 

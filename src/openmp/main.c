@@ -1,5 +1,5 @@
-#include "matFact.h"
-#include "parser.h"
+#include "openmp/matFact.h"
+#include "common/parser.h"
 
 #include <stdio.h>
 #include <stdlib.h>

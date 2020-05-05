@@ -1,6 +1,6 @@
-#include "parser.h"
+#include "common/parser.h"
 
-#include "compact_matrix.h"
+#include "common/compact_matrix.h"
 
 #include <fcntl.h>
 #include <stdarg.h>
@@ -208,12 +208,14 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
     }
     // Transposed
     Matrix l = matrix_make(header.users, header.features);
+    Matrix lt = matrix_make(header.features, header.items);
     Matrix r = matrix_make(header.features, header.items);
     cmatrix_sort(&a_transpose);
     *matrices = (Matrices){
         .num_iterations = header.num_iterations,
         .alpha = header.alpha,
         .l = l,
+        .l_trans = lt,
         .r = r,
         .a = a,
         .a_transpose = a_transpose,

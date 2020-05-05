@@ -1,7 +1,7 @@
-#include "matFact.h"
+#include "serial/matFact.h"
 
-#include "compact_matrix.h"
-#include "parser.h"
+#include "common/compact_matrix.h"
+#include "common/parser.h"
 
 #include <assert.h>
 #include <stdio.h>

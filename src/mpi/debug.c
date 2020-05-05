@@ -1,6 +1,6 @@
 #ifndef MPI_DEBUG_H
 #define MPI_DEBUG_H
-#include "debug.h"
+#include "mpi/debug.h"
 
 #include <stdio.h>
 #include <unistd.h>
