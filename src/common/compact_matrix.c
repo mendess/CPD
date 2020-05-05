@@ -32,7 +32,7 @@
 
 CompactMatrix
 cmatrix_make(size_t rows, size_t const columns, size_t const num_elems) {
-    return (CompactMatrix){
+    CompactMatrix c = (CompactMatrix){
         .items = malloc(sizeof(Item) * num_elems),
         .row_lengths = calloc(sizeof(size_t), rows),
         ._total_items = num_elems,
@@ -40,6 +40,9 @@ cmatrix_make(size_t rows, size_t const columns, size_t const num_elems) {
         .current_items = 0,
         .n_rows = rows,
         .n_cols = columns};
+    c.row_pos[0] = 0;
+    c.row_pos[c.n_rows] = num_elems;
+    return c;
 }
 
 void cmatrix_add(

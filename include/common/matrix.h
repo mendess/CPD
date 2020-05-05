@@ -93,7 +93,6 @@ typedef struct Matrices {
     CompactMatrix a_transpose;
     Matrix l;
     Matrix r;
-    Matrix l_trans;
 } Matrices;
 
 void matrices_free(Matrices* m);

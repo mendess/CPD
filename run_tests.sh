@@ -37,21 +37,25 @@ for mode in "${modes[@]}"; do
                     "./target/$mode/{target}/$binary $file.in"
             else
                 for target in "${targets[@]}"; do
-                    echo '===============================>'
-                    echo -e "\e[34mRunning test\e[0m"
-                    echo -e "\tTarget: $target"
-                    echo -e "\tMode: $mode"
-                    echo -e "\tFile: $file"
-                    time output="$(./target/"$mode"/"$target"/"$binary" "$file.in" 2>/tmp/err)"
+                    echo -ne "\e[34mRunning test\e[0m"
+                    echo -ne " Target: $target"
+                    echo -ne "\tMode: $mode"
+                    echo -ne "\tInput: $file"
+                    echo -n "....."
+                    output="$(command time -o /tmp/time \
+                        ./target/"$mode"/"$target"/"$binary" "$file.in" 2>/tmp/err)"
                     answer="$(cat "$file.out")"
                     if [[ "$output" != "$answer" ]]; then
-                        echo -e "\e[31mTest failed\e[0m"
+                        echo -e "\e[31m FAILED\e[0m"
                         echo -e "Expected\n$answer"
                         echo -e "Got\n$output"
                         echo -e "stderr:"
                         cat /tmp/err
-                        exit 1
+                    else
+                        echo -e "\e[32m ok\e[0m"
                     fi
+                    [[ "$1" == bench* ]] && head -1 /tmp/time
+                    true # clear $?
                 done
             fi
         done

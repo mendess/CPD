@@ -1,5 +1,6 @@
 #include "common/parser.h"
 #include "mpi/cmatrix.h"
+#include "mpi/parser.h"
 #include "mpi/debug.h"
 #include "mpi/matFact.h"
 #include "mpi/mpi_size_t.h"
@@ -36,11 +37,6 @@ int main(int argc, char** argv) {
             default:
                 break;
         }
-
-        // Send num of iterations
-        // printf("Num of iterations node 0: %zu\n", matrices.num_iterations);
-        // printf("Node 0 - l rows %zu \n", matrices.l.rows);
-
         size_t send_size_t[NSIZE_T] = {
             matrices.num_iterations,
             matrices.a._total_items,
@@ -93,16 +89,12 @@ int main(int argc, char** argv) {
         matrices.a_transpose.current_items = send_size_t[4];
         matrices.a_transpose.n_rows = send_size_t[5];
         matrices.a_transpose.n_cols = send_size_t[6];
-        matrices.l.rows = send_size_t[7];
-        matrices.l.columns = send_size_t[8];
-        matrices.r.rows = send_size_t[9];
-        matrices.r.columns = send_size_t[10];
-        // printf("Num of iterations %zu\n", matrices.num_iterations);
-        // printf("Matrix l num of rows %zu \n", matrices.l.rows);
 
         matrices.a.items = malloc(sizeof(Item) * matrices.a.current_items);
         matrices.a_transpose.items =
             malloc(sizeof(Item) * matrices.a_transpose.current_items);
+        matrices.l = matrix_make(send_size_t[7], send_size_t[8]);
+        matrices.r = matrix_make(send_size_t[9], send_size_t[10]);
 
         mpi_recv_items(
             matrices.a.items,
@@ -118,12 +110,6 @@ int main(int argc, char** argv) {
             0,
             MPI_COMM_WORLD,
             NULL);
-
-        matrices.l.data =
-            malloc(sizeof(double) * (matrices.l.rows * matrices.l.columns));
-        matrices.r.data =
-            malloc(sizeof(double) * (matrices.r.rows * matrices.r.columns));
-
         MPI_Recv(
             matrices.l.data,
             matrices.l.rows * matrices.l.columns,
@@ -142,28 +128,6 @@ int main(int argc, char** argv) {
             NULL);
         MPI_Recv(&matrices.alpha, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, NULL);
     }
-    /* CompactMatrix* mm[2] = {&matrices.a, &matrices.a_transpose};
-     */
-    /* char c[2] = {'a', 't'}; */
-    /* for (size_t m = 0; m < 2; ++m) { */
-    /*     Item const* const end = m[mm]->items + m[mm]->current_items; */
-    /*     for (Item const* iter = m[mm]->items; iter != end; iter++) { */
-    /*         fprintf( */
-    /*             stderr, */
-    /*             "Line from %c node %d, pos (%zu, %zu) has value %f\n", */
-    /*             c[m], */
-    /*             me, */
-    /*             iter->row, */
-    /*             iter->column, */
-    /*             iter->value); */
-    /*     } */
-    /* } */
-    /*
-    for(int i = 0; i < matrices.a.n_rows; i++){
-        printf("Row %d starts at position %ld\n", i,
-    matrices.a.row_pos[i]);
-    }
-    */
     random_fill_LR(&matrices.l, &matrices.r);
     if (me == 0) {
         Matrix b = iter_mpi(&matrices, nprocs, me);

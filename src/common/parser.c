@@ -10,20 +10,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-typedef struct StrIter {
-    char const* str;
-} StrIter;
-
-typedef struct Header {
-    size_t features;
-    size_t users;
-    size_t items;
-    size_t non_zero_elems;
-    double alpha;
-    unsigned int num_iterations;
-} Header;
-
-static char* read_file(char const* const filename) {
+char* read_file(char const* const filename) {
     int const fd = open(filename, O_RDONLY);
     if (fd == -1) {
         perror("recomender: failed to open input file");
@@ -190,13 +177,8 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
 
     CompactMatrix a =
         cmatrix_make(header.users, header.items, header.non_zero_elems);
-    a.row_pos[0] = 0;
-    a.row_pos[a.n_rows] = header.non_zero_elems;
     CompactMatrix a_transpose =
         cmatrix_make(header.items, header.users, header.non_zero_elems);
-    //write(2,"test\n", 6);
-    a_transpose.row_pos[0] = 0;
-    a_transpose.row_pos[a_transpose.n_rows] = header.non_zero_elems;
 
     error = parse_matrix_a(
         &content_iter, header.non_zero_elems, &a, &a_transpose);
@@ -208,14 +190,12 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
     }
     // Transposed
     Matrix l = matrix_make(header.users, header.features);
-    Matrix lt = matrix_make(header.features, header.items);
     Matrix r = matrix_make(header.features, header.items);
     cmatrix_sort(&a_transpose);
     *matrices = (Matrices){
         .num_iterations = header.num_iterations,
         .alpha = header.alpha,
         .l = l,
-        .l_trans = lt,
         .r = r,
         .a = a,
         .a_transpose = a_transpose,
