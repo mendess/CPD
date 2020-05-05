@@ -129,8 +129,8 @@ ParserError parse_header(StrIter* const iter, Header* const p) {
 ParserError parse_matrix_a(
     StrIter* const iter,
     size_t const non_zero_elems,
-    CompactMatrix* const a_prime,
-    CompactMatrix* const a_prime2) {
+    CompactMatrix* const a,
+    CompactMatrix* const a2) {
     size_t row, column;
     double value;
     size_t n_lines = 0;
@@ -142,14 +142,14 @@ ParserError parse_matrix_a(
                &column,
                &value) == 3) {
         ++n_lines;
-        if (row >= a_prime->n_rows || column >= a_prime->n_cols) {
+        if (row >= a->n_rows || column >= a->n_cols) {
             fprintf(
                 stderr,
                 "Invalid row or column values at line %zu."
                 " Max (%zu, %zu), got (%zu, %zu)\n",
                 n_lines,
-                a_prime->n_rows,
-                a_prime->n_cols,
+                a->n_rows,
+                a->n_cols,
                 row,
                 column);
             return PARSER_ERROR_INVALID_FORMAT;
@@ -164,8 +164,8 @@ ParserError parse_matrix_a(
                 value);
             return PARSER_ERROR_INVALID_FORMAT;
         }
-        cmatrix_add(a_prime, row, column, value);
-        cmatrix_add(a_prime2, column, row, value);
+        cmatrix_add(a, row, column, value);
+        cmatrix_add(a2, column, row, value);
     }
 
     if (n_lines < non_zero_elems) {
@@ -188,28 +188,28 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
         return error;
     }
 
-    CompactMatrix a_prime =
+    CompactMatrix a =
         cmatrix_make(header.users, header.items, header.non_zero_elems);
-    a_prime.row_pos[0] = 0;
-    a_prime.row_pos[a_prime.n_rows] = header.non_zero_elems;
-    CompactMatrix a_prime_transpose =
+    a.row_pos[0] = 0;
+    a.row_pos[a.n_rows] = header.non_zero_elems;
+    CompactMatrix a_transpose =
         cmatrix_make(header.items, header.users, header.non_zero_elems);
     //write(2,"test\n", 6);
-    a_prime_transpose.row_pos[0] = 0;
-    a_prime_transpose.row_pos[a_prime_transpose.n_rows] = header.non_zero_elems;
+    a_transpose.row_pos[0] = 0;
+    a_transpose.row_pos[a_transpose.n_rows] = header.non_zero_elems;
 
     error = parse_matrix_a(
-        &content_iter, header.non_zero_elems, &a_prime, &a_prime_transpose);
+        &content_iter, header.non_zero_elems, &a, &a_transpose);
     free(contents);
     if (error != PARSER_ERROR_OK) {
-        cmatrix_free(&a_prime);
-        cmatrix_free(&a_prime_transpose);
+        cmatrix_free(&a);
+        cmatrix_free(&a_transpose);
         return error;
     }
     // Transposed
     Matrix l = matrix_make(header.users, header.features);
     Matrix r = matrix_make(header.features, header.items);
-    cmatrix_sort(&a_prime_transpose);
+    cmatrix_sort(&a_transpose);
     // TODO: passar para o iter
     random_fill_LR(header.features, &l, &r);
     *matrices = (Matrices){
@@ -217,8 +217,8 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
         .alpha = header.alpha,
         .l = l,
         .r = r,
-        .a_prime = a_prime,
-        .a_prime_transpose = a_prime_transpose,
+        .a = a,
+        .a_transpose = a_transpose,
     };
     return PARSER_ERROR_OK;
 }

@@ -36,14 +36,14 @@ void matrix_b(
 }
 
 void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
-    Item const* iter = matrices->a_prime.items;
-    Item const* const end = iter + matrices->a_prime.current_items;
+    Item const* iter = matrices->a.items;
+    Item const* const end = iter + matrices->a.current_items;
 
 #pragma omp parallel for firstprivate(iter) schedule(guided)
-    for (size_t row = 0; row < matrices->a_prime.n_rows; ++row) {
-        size_t row_len = matrices->a_prime.row_lengths[row];
+    for (size_t row = 0; row < matrices->a.n_rows; ++row) {
+        size_t row_len = matrices->a.row_lengths[row];
         while (iter != end && iter->row < row)
-            iter += matrices->a_prime.row_lengths[iter->row];
+            iter += matrices->a.row_lengths[iter->row];
         for (size_t k = 0; k < matrices->l.columns; k++) {
             double aux = 0;
             Item const* line_iter = iter;
@@ -66,9 +66,9 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
 void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
 #pragma omp parallel for schedule(guided)
     for (size_t k = 0; k < matrices->r.rows; k++) {
-        Item const* iter = matrices->a_prime_transpose.items;
+        Item const* iter = matrices->a_transpose.items;
         Item const* const end =
-            iter + matrices->a_prime_transpose.current_items;
+            iter + matrices->a_transpose.current_items;
         for (size_t column = 0; iter != end && column < matrices->r.columns;
              column++) {
             double aux = 0;
@@ -96,9 +96,9 @@ static inline void swap(Matrix* a, Matrix* b) {
 Matrix iter(Matrices* matrices) {
     Matrix aux_l = matrix_clone(&matrices->l);
     Matrix aux_r = matrix_clone(&matrices->r);
-    Matrix b = matrix_make(matrices->a_prime.n_rows, matrices->a_prime.n_cols);
+    Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
     for (size_t i = 0; i < matrices->num_iterations; i++) {
-        matrix_b(&matrices->l, &matrices->r, &b, &matrices->a_prime);
+        matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
         next_iter_l(matrices, &aux_l, &b);
         next_iter_r(matrices, &aux_r, &b);
         swap(&matrices->l, &aux_l);

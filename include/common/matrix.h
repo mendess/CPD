@@ -89,8 +89,8 @@ void matrix_clear(Matrix* m);
 typedef struct Matrices {
     size_t num_iterations;
     double alpha;
-    CompactMatrix a_prime;
-    CompactMatrix a_prime_transpose;
+    CompactMatrix a;
+    CompactMatrix a_transpose;
     Matrix l;
     Matrix r;
     Matrix l_trans;
