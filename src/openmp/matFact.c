@@ -65,12 +65,12 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
 
 void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
 #pragma omp parallel for schedule(guided)
-    for (size_t k = 0; k < matrices->r.rows; k++) {
+    for (size_t k = 0; k < matrices->r.rows; ++k) {
         Item const* iter = matrices->a_transpose.items;
         Item const* const end =
             iter + matrices->a_transpose.current_items;
         for (size_t column = 0; iter != end && column < matrices->r.columns;
-             column++) {
+             ++column) {
             double aux = 0;
             size_t const column = iter->row;
             while (iter != end && iter->row == column) {

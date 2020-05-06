@@ -4,16 +4,17 @@
 #include "common/matrix.h"
 #include "common/parser.h"
 
-#define eprintf(...) (fprintf(stderr, ...))
-
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
+
+#define eprintf(...) (fprintf(stderr, ...))
 
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
-typedef struct Slice {
-    Item* start;
-    Item* end;
+typedef struct {
+    Item const* start;
+    Item const* const end;
 } Slice;
 
 void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* b) {
@@ -42,19 +43,31 @@ void matrix_b(Matrix const* l, Matrix const* r, Matrix* b, Slice a) {
     }
 }
 
+// This method is only define for b's of the same size
+//
+void matrix_b_add(Matrix* b, Matrix const* other_b) {
+    double* iter = b->data;
+    double const* other_iter = other_b->data;
+    double const* const end = iter + (b->rows * b->columns);
+    while (iter != end) {
+        *iter += *other_iter;
+        ++iter;
+        ++other_iter;
+    }
+}
+
 void next_iter_l(
     Matrices const* matrices,
-    Slice a,
+    Slice at,
     size_t k_start,
     size_t k_end,
     Matrix* aux_l,
     Matrix const* b) {
-    Item const* iter = a.start;
-    Item const* const end = a.end;
-
-    while (iter != end) {
+    for (size_t k = k_start; k < k_end; ++k) {
         size_t counter = 0;
-        for (size_t k = k_start; k < k_end; k++) {
+        Item const* iter = at.start;
+        Item const* const end = at.end;
+        while (iter != end) {
             double aux = 0;
             Item const* line_iter = iter;
             size_t const row = line_iter->row;
@@ -70,8 +83,8 @@ void next_iter_l(
             }
             *MATRIX_AT_MUT(aux_l, k, row) =
                 *MATRIX_AT(&matrices->l, k, row) - matrices->alpha * aux;
+            iter += counter;
         }
-        iter += counter;
     }
 }
 
@@ -82,7 +95,7 @@ void next_iter_r(
     size_t k_end,
     Matrix* aux_r,
     Matrix const* b) {
-    for (size_t k = k_start; k < k_end; k++) {
+    for (size_t k = k_start; k < k_end; ++k) {
         Item const* iter = a.start;
         Item const* const end = a.end;
         for (size_t column = 0; iter != end && column < matrices->r.columns;
