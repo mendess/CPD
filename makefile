@@ -56,23 +56,32 @@ all: debug _rename
 debug: debug_serial debug_openmp debug_mpi
 
 debug_serial: __debug_dir $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL)
+	@echo -e "\e[34mLinking $@\e[32m"
 	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL) $(DFLAGS) -o $(DEBUG_DIR_SERIAL)/$(PROG)
+	@echo -en "\e[0m"
 
 debug_openmp: __debug_dir $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP)
+	@echo -e "\e[34mLinking $@\e[32m"
 	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP) $(DFLAGS) -o $(DEBUG_DIR_OPENMP)/$(PROG) $(OMPFLAGS)
+	@echo -en "\e[0m"
 
 debug_mpi: __debug_dir $(OBJ_DEBUG_COMMON_MPI) $(OBJ_DEBUG_MPI)
+	@echo -e "\e[34mLinking $@\e[32m"
 	$(CC) $(CFLAGS) -I$(HEADERS) -rdynamic $(OBJ_DEBUG_COMMON_MPI) $(OBJ_DEBUG_MPI) $(DFLAGS) -o $(DEBUG_DIR_MPI)/$(PROG) -DMPI
+	@echo -en "\e[0m"
 
 release: release_serial release_openmp release_mpi
 
 release_serial: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL)
+	@echo -e "\e[34mLinking $@\e[0m"
 	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL) $(RFLAGS) -o $(RELEASE_DIR_SERIAL)/$(PROG)
 
 release_openmp: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP)
+	@echo -e "\e[34mLinking $@\e[0m"
 	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP) $(RFLAGS) -o $(RELEASE_DIR_OPENMP)/$(PROG) $(OMPFLAGS)
 
 release_mpi: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_MPI)
+	@echo -e "\e[34mLinking $@\e[0m"
 	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON_MPI) $(OBJ_RELEASE_MPI) $(RFLAGS) -o $(RELEASE_DIR_MPI)/$(PROG) -DMPI
 
 $(DEBUG_DIR_COMMON)/%.o: $(SOURCES_COMMON)

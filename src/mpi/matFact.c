@@ -113,10 +113,10 @@ start_chunk(size_t const proc_id, int const nprocs, size_t const num_iters) {
     return x + (proc_id < rem ? proc_id : rem);
 }
 
-static inline Slice split(int proc_id, int nprocs, size_t const n_rows) {
-    size_t start = start_chunk(proc_id, nprocs, n_rows);
-    size_t end = start_chunk(proc_id + 1, nprocs, n_rows);
-    return (Slice){.start = start, .end = end};
+static inline Slice slice_rows(int proc_id, int nprocs, size_t const n_rows) {
+    return (Slice){
+        .start = start_chunk(proc_id, nprocs, n_rows),
+        .end = start_chunk(proc_id + 1, nprocs, n_rows)};
 }
 
 static inline int send_matrix(Matrix const* b, int to) {
@@ -125,9 +125,13 @@ static inline int send_matrix(Matrix const* b, int to) {
 }
 
 static inline int send_matrix_slice(Matrix const* m, int to, Slice s) {
-    int size = (s.end - s.start) * m->columns;
     return MPI_Send(
-        MATRIX_AT(m, s.start, 0), size, MPI_DOUBLE, to, 0, MPI_COMM_WORLD);
+        MATRIX_AT(m, s.start, 0),
+        (s.end - s.start) * m->columns,
+        MPI_DOUBLE,
+        to,
+        0,
+        MPI_COMM_WORLD);
 }
 
 static inline int receive_matrix(Matrix* b, int from) {
@@ -141,12 +145,10 @@ static inline int receive_matrix(Matrix* b, int from) {
         NULL);
 }
 
-static inline int
-receive_matrix_slice(Matrix* m, int from, size_t start_k, size_t end_k) {
-    int size = (end_k - start_k) * m->columns;
+static inline int receive_matrix_slice(Matrix* m, int from, Slice s) {
     return MPI_Recv(
-        MATRIX_AT_MUT(m, start_k, 0),
-        size,
+        MATRIX_AT_MUT(m, s.start, 0),
+        (s.end - s.start) * m->columns,
         MPI_DOUBLE,
         from,
         0,
@@ -167,7 +169,7 @@ Matrix iter_mpi(Matrices* const matrices, int nprocs, int const me) {
     Matrix aux_l = matrix_clone(&matrices->l);
     Matrix aux_r = matrix_clone(&matrices->r);
     Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
-    Slice s = split(me, nprocs, matrices->l.rows);
+    Slice s = slice_rows(me, nprocs, matrices->l.rows);
     for (size_t i = 0; i < matrices->num_iterations; ++i) {
         if (me == 0) {
             matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
@@ -184,14 +186,12 @@ Matrix iter_mpi(Matrices* const matrices, int nprocs, int const me) {
             send_matrix_slice(&matrices->r, 0, s);
         } else {
             for (int proc = 1; proc < nprocs; ++proc) {
-                size_t start_k = start_chunk(proc, nprocs, matrices->l.rows);
-                size_t end_k = start_chunk(proc + 1, nprocs, matrices->l.rows);
-                receive_matrix_slice(&matrices->l, proc, start_k, end_k);
+                receive_matrix_slice(
+                    &matrices->l, proc, slice_rows(proc, nprocs, matrices->l.rows));
             }
             for (int proc = 1; proc < nprocs; ++proc) {
-                size_t start_k = start_chunk(proc, nprocs, matrices->r.rows);
-                size_t end_k = start_chunk(proc + 1, nprocs, matrices->r.rows);
-                receive_matrix_slice(&matrices->r, proc, start_k, end_k);
+                receive_matrix_slice(
+                    &matrices->r, proc, slice_rows(proc, nprocs, matrices->l.rows));
             }
         }
     }

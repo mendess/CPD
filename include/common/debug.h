@@ -8,10 +8,11 @@ void gdb_attach_point();
 
 #ifdef MPI
 extern int G_ME;
-#define eprintf(fmt, ...) (fprintf(stderr, "Node %d: " fmt, G_ME, ##__VA_ARGS__))
+#define eprintf(fmt, ...) (fprintf(stderr, "Node %d: " fmt, G_ME, __VA_ARGS__))
 #else
 #define G_ME 0
 #define eprintf(...) (fprintf(stderr, ##__VA_ARGS__))
 #endif // MPI
+#define eputs(s) eprintf("%s", (s))
 
 #endif // MPI_DEBUG_H

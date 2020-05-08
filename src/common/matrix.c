@@ -42,7 +42,7 @@ print_error(size_t rows, size_t columns, size_t row, size_t column) {
     int size = backtrace(func_addrs, 30);
     char const* const* const bt =
         (char const* const*) backtrace_symbols(func_addrs, size);
-    eprintf("Backtrace\n");
+    eputs("Backtrace\n");
     for (char const* const* i = bt + 1; i != bt + size; ++i) {
         eprintf("%s\n", *i);
     }
