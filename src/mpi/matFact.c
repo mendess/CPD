@@ -5,33 +5,40 @@
 #include "common/parser.h"
 
 #include <assert.h>
+#include <mpi.h>
 #include <stdio.h>
 #include <string.h>
 
-#define eprintf(...) (fprintf(stderr, ...))
+#ifndef MPI
+#    define MPI
+#endif
+
+int G_ME;
 
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
 typedef struct {
-    Item const* start;
-    Item const* const end;
+    size_t start;
+    size_t end;
 } Slice;
 
 void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* b) {
     assert(l->rows == r->rows);
     for (size_t i = 0; i < l->columns; i++) {
         for (size_t j = 0; j < r->columns; ++j) {
+            double bij = 0;
             for (size_t k = 0; k < l->rows; ++k) {
-                *MATRIX_AT_MUT(b, i, j) +=
-                    *MATRIX_AT(l, k, i) * *MATRIX_AT(r, k, j);
+                bij += *MATRIX_AT(l, k, i) * *MATRIX_AT(r, k, j);
             }
+            *MATRIX_AT_MUT(b, i, j) = bij;
         }
     }
 }
 
-void matrix_b(Matrix const* l, Matrix const* r, Matrix* b, Slice a) {
-    Item const* iter = a.start;
-    Item const* const end = a.end;
+void matrix_b(
+    Matrix const* l, Matrix const* r, Matrix* b, CompactMatrix const* a) {
+    Item const* iter = a->items;
+    Item const* const end = iter + a->current_items;
 
     while (iter != end) {
         double bij = 0;
@@ -43,31 +50,14 @@ void matrix_b(Matrix const* l, Matrix const* r, Matrix* b, Slice a) {
     }
 }
 
-// This method is only define for b's of the same size
-//
-void matrix_b_add(Matrix* b, Matrix const* other_b) {
-    double* iter = b->data;
-    double const* other_iter = other_b->data;
-    double const* const end = iter + (b->rows * b->columns);
-    while (iter != end) {
-        *iter += *other_iter;
-        ++iter;
-        ++other_iter;
-    }
-}
-
 void next_iter_l(
-    Matrices const* matrices,
-    Slice at,
-    size_t k_start,
-    size_t k_end,
-    Matrix* aux_l,
-    Matrix const* b) {
-    for (size_t k = k_start; k < k_end; ++k) {
+    Matrices const* matrices, Slice a, Matrix* aux_l, Matrix const* b) {
+    Item const* iter = matrices->a.items;
+    Item const* const end = iter + matrices->a.current_items;
+
+    while (iter != end) {
         size_t counter = 0;
-        Item const* iter = at.start;
-        Item const* const end = at.end;
-        while (iter != end) {
+        for (size_t k = a.start; k < a.end; ++k) {
             double aux = 0;
             Item const* line_iter = iter;
             size_t const row = line_iter->row;
@@ -83,23 +73,17 @@ void next_iter_l(
             }
             *MATRIX_AT_MUT(aux_l, k, row) =
                 *MATRIX_AT(&matrices->l, k, row) - matrices->alpha * aux;
-            iter += counter;
         }
+        iter += counter;
     }
 }
 
 void next_iter_r(
-    Matrices const* matrices,
-    Slice a,
-    size_t k_start,
-    size_t k_end,
-    Matrix* aux_r,
-    Matrix const* b) {
-    for (size_t k = k_start; k < k_end; ++k) {
-        Item const* iter = a.start;
-        Item const* const end = a.end;
-        for (size_t column = 0; iter != end && column < matrices->r.columns;
-             column++) {
+    Matrices const* matrices, Slice a, Matrix* aux_r, Matrix const* b) {
+    for (size_t k = a.start; k < a.end; ++k) {
+        Item const* iter = matrices->a_transpose.items;
+        Item const* const end = iter + matrices->a_transpose.current_items;
+        while (iter != end) {
             double aux = 0;
             size_t const column = iter->row;
             while (iter != end && iter->row == column) {
@@ -129,30 +113,87 @@ start_chunk(size_t const proc_id, int const nprocs, size_t const num_iters) {
     return x + (proc_id < rem ? proc_id : rem);
 }
 
-static inline Slice split(CompactMatrix* a, int proc_id, int nprocs) {
-    size_t start = start_chunk(proc_id, nprocs, a->n_rows);
-    size_t end = start_chunk(proc_id + 1, nprocs, a->n_rows);
-    fprintf(stderr, "Node %d starts ends [%zu, %zu[\n", proc_id, start, end);
-    Item* start_p = a->items + a->row_pos[start];
-    Item* end_p = a->items + a->row_pos[end];
-    return (Slice){.start = start_p, .end = end_p};
+static inline Slice split(int proc_id, int nprocs, size_t const n_rows) {
+    size_t start = start_chunk(proc_id, nprocs, n_rows);
+    size_t end = start_chunk(proc_id + 1, nprocs, n_rows);
+    return (Slice){.start = start, .end = end};
 }
 
-Matrix iter_mpi(Matrices* matrices, int nprocs, int me) {
+static inline int send_matrix(Matrix const* b, int to) {
+    return MPI_Send(
+        b->data, b->columns * b->rows, MPI_DOUBLE, to, 0, MPI_COMM_WORLD);
+}
+
+static inline int send_matrix_slice(Matrix const* m, int to, Slice s) {
+    int size = (s.end - s.start) * m->columns;
+    return MPI_Send(
+        MATRIX_AT(m, s.start, 0), size, MPI_DOUBLE, to, 0, MPI_COMM_WORLD);
+}
+
+static inline int receive_matrix(Matrix* b, int from) {
+    return MPI_Recv(
+        b->data,
+        b->columns * b->rows,
+        MPI_DOUBLE,
+        from,
+        0,
+        MPI_COMM_WORLD,
+        NULL);
+}
+
+static inline int
+receive_matrix_slice(Matrix* m, int from, size_t start_k, size_t end_k) {
+    int size = (end_k - start_k) * m->columns;
+    return MPI_Recv(
+        MATRIX_AT_MUT(m, start_k, 0),
+        size,
+        MPI_DOUBLE,
+        from,
+        0,
+        MPI_COMM_WORLD,
+        NULL);
+}
+
+Matrix iter_mpi(Matrices* const matrices, int nprocs, int const me) {
+    // This allows the program to function even if there are less rows then
+    // processes
+    if (nprocs >= 0 && matrices->l.rows < (unsigned) nprocs) {
+        if (me != 0) {
+            return (Matrix){.data = NULL, .rows = 0, .columns = 0};
+        } else {
+            nprocs = 1;
+        }
+    }
     Matrix aux_l = matrix_clone(&matrices->l);
     Matrix aux_r = matrix_clone(&matrices->r);
     Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
-    Slice a = {
-        matrices->a.items, matrices->a.items + matrices->a.current_items};
-    Slice at = {
-        matrices->a_transpose.items,
-        matrices->a_transpose.items + matrices->a_transpose.current_items};
-    for (size_t i = 0; i < matrices->num_iterations; i++) {
-        matrix_b(&matrices->l, &matrices->r, &b, a);
-        next_iter_l(matrices, a, 0, aux_l.rows, &aux_l, &b);
-        next_iter_r(matrices, at, 0, aux_r.rows, &aux_r, &b);
+    Slice s = split(me, nprocs, matrices->l.rows);
+    for (size_t i = 0; i < matrices->num_iterations; ++i) {
+        if (me == 0) {
+            matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
+            for (int proc = 1; proc < nprocs; ++proc) send_matrix(&b, proc);
+        } else {
+            receive_matrix(&b, 0);
+        }
+        next_iter_l(matrices, s, &aux_l, &b);
+        next_iter_r(matrices, s, &aux_r, &b);
         swap(&matrices->l, &aux_l);
         swap(&matrices->r, &aux_r);
+        if (me != 0) {
+            send_matrix_slice(&matrices->l, 0, s);
+            send_matrix_slice(&matrices->r, 0, s);
+        } else {
+            for (int proc = 1; proc < nprocs; ++proc) {
+                size_t start_k = start_chunk(proc, nprocs, matrices->l.rows);
+                size_t end_k = start_chunk(proc + 1, nprocs, matrices->l.rows);
+                receive_matrix_slice(&matrices->l, proc, start_k, end_k);
+            }
+            for (int proc = 1; proc < nprocs; ++proc) {
+                size_t start_k = start_chunk(proc, nprocs, matrices->r.rows);
+                size_t end_k = start_chunk(proc + 1, nprocs, matrices->r.rows);
+                receive_matrix_slice(&matrices->r, proc, start_k, end_k);
+            }
+        }
     }
     matrix_b_full(&matrices->l, &matrices->r, &b);
     matrix_free(&aux_l);

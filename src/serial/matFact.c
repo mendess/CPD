@@ -12,10 +12,11 @@ void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
     assert(l->columns == r->rows);
     for (size_t i = 0; i < l->rows; i++) {
         for (size_t j = 0; j < r->columns; ++j) {
+            double bij = 0;
             for (size_t k = 0; k < l->columns; ++k) {
-                *MATRIX_AT_MUT(matrix, i, j) +=
-                    *MATRIX_AT(l, i, k) * *MATRIX_AT(r, k, j);
+                bij += *MATRIX_AT(l, i, k) * *MATRIX_AT(r, k, j);
             }
+            *MATRIX_AT_MUT(matrix, i, j) = bij;
         }
     }
 }
@@ -66,8 +67,7 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
     for (size_t k = 0; k < matrices->r.rows; k++) {
         Item const* iter = matrices->a_transpose.items;
         Item const* const end = iter + matrices->a_transpose.current_items;
-        for (size_t column = 0; iter != end && column < matrices->r.columns;
-             column++) {
+        while (iter != end) {
             double aux = 0;
             size_t const column = iter->row;
             while (iter != end && iter->row == column) {

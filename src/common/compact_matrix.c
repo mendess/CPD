@@ -5,31 +5,6 @@
 #include <string.h>
 
 // CSR (compressed sparse row)
-// [
-// [0, 0, 0, 0],
-// [5, 8, 0, 0],
-// [0, 0, 3, 0],
-// [0, 6, 0, 0]
-// ]
-//
-// vals: [  5,8,3,6]
-// cols: [  0,1,2,1]
-// rows: [0,0,  2,3,4]
-//
-// row_start = rows[1]; 0
-// row_end   = rows[1 + 1]; 2
-//
-// ROW_VALUES = vals[row_start:row_end]; [5,8]
-// ROW_COLS   = cols[0        :2      ]; [0,1]
-//
-// [
-// [0, 5, 0, 0],
-// [0, 8, 0, 6],
-// [0, 0, 3, 0],
-// [0, 0, 0, 0]
-// ]
-// Changing is hard
-
 CompactMatrix
 cmatrix_make(size_t rows, size_t const columns, size_t const num_elems) {
     CompactMatrix c = (CompactMatrix){
@@ -106,6 +81,33 @@ static int item_compare(void const* a, void const* b) {
 
 void cmatrix_sort(CompactMatrix* m) {
     qsort(m->items, m->current_items, sizeof(Item), item_compare);
+#ifdef MPI
+    m->row_pos[0] = 0;
+    for (size_t i = 0; i < m->current_items; ++i) {
+        size_t row = m->items[i].row;
+        if (i > 0 && m->items[i].row != m->items[i - 1].row) {
+            m->row_pos[row] = i;
+            if (row > 1 && m->row_pos[row - 1] == 0) {
+                row = row - 1;
+                while (m->row_lengths[row] == 0) {
+                    if (m->row_pos[row] == 0) {
+                        m->row_pos[row] = i;
+                    } else {
+                        break;
+                    }
+                    row--;
+                }
+            }
+        }
+    }
+    m->row_pos[m->n_rows] = m->current_items;
+#    ifndef NO_ASSERT
+    for (size_t const* i = m->row_pos + 1; i != m->row_pos + m->n_rows; ++i) {
+        assert(m->items[*i].row != m->items[*(i - 1)].row);
+    }
+    assert(m->items + m->row_pos[m->n_rows] == m->items + m->current_items);
+#    endif // NO_ASSERT
+#endif     // MPI
 }
 
 void cmatrix_free(CompactMatrix* m) {

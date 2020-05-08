@@ -1,8 +1,12 @@
 #include "common/matrix.h"
 
+#include "common/debug.h"
+
 #include <assert.h>
+#include <execinfo.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdnoreturn.h>
 #include <string.h>
 
 #define RAND01 ((double) random() / (double) RAND_MAX)
@@ -25,30 +29,36 @@ Matrix matrix_clone(Matrix const* const other) {
     return new_m;
 }
 
+noreturn static void
+print_error(size_t rows, size_t columns, size_t row, size_t column) {
+    eprintf(
+        "Paniced at access out of bounds. "
+        "Bounds were (%zu, %zu) but index is (%zu, %zu)\n",
+        rows,
+        columns,
+        row,
+        column);
+    void** func_addrs = malloc(sizeof(void*) * 30);
+    int size = backtrace(func_addrs, 30);
+    char const* const* const bt =
+        (char const* const*) backtrace_symbols(func_addrs, size);
+    eprintf("Backtrace\n");
+    for (char const* const* i = bt + 1; i != bt + size; ++i) {
+        eprintf("%s\n", *i);
+    }
+    abort();
+}
+
 double const* matrix_at(Matrix const* a, size_t row, size_t column) {
     if (row >= a->rows || column >= a->columns) {
-        fprintf(
-            stderr,
-            "Bounds: (%zu, %zu) access (%zu, %zu)",
-            a->rows,
-            a->columns,
-            row,
-            column);
-        assert(0);
+        print_error(a->rows, a->columns, row, column);
     }
     return a->data + (row * a->columns + column);
 }
 
 double* matrix_at_mut(Matrix* a, size_t row, size_t column) {
     if (row >= a->rows || column >= a->columns) {
-        fprintf(
-            stderr,
-            "Bounds: (%zu, %zu) access (%zu, %zu)",
-            a->rows,
-            a->columns,
-            row,
-            column);
-        assert(0);
+        print_error(a->rows, a->columns, row, column);
     }
     return a->data + (row * a->columns + column);
 }
@@ -81,13 +91,18 @@ MatrixIterMut matrix_iter_full_mut(Matrix* const m) {
         .iter = m->data, .end = m->data + (m->rows * m->columns)};
 }
 
-void matrix_print(Matrix const* m) {
+void matrix_print_with_name(Matrix const* const m, char const* const name) {
+    eprintf("%s =\n", name);
     for (size_t r = 0; r < m->rows; r++) {
         for (MatrixIter i = matrix_iter_row(m, r); i.iter != i.end; ++i.iter) {
             fprintf(stderr, "%.6lf ", *i.iter);
         }
         fputc('\n', stderr);
     }
+}
+
+void matrix_print(Matrix const* const m) {
+    matrix_print_with_name(m, "Matrix");
 }
 
 void random_fill_LT_R(Matrix* const l, Matrix* const r) {

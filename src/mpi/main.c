@@ -1,9 +1,9 @@
+#include "common/debug.h"
 #include "common/parser.h"
 #include "mpi/cmatrix.h"
-#include "mpi/parser.h"
-#include "mpi/debug.h"
 #include "mpi/matFact.h"
 #include "mpi/mpi_size_t.h"
+#include "mpi/parser.h"
 
 #include <assert.h>
 #include <limits.h>
@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define NSIZE_T 11
 
@@ -24,6 +25,8 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     Matrices matrices = {0};
+    G_ME = me;
+    eprintf("PID: %d\n", getpid());
 
     if (me == 0) {
         ParserError error = parse_file_lt(argv[1], &matrices);
@@ -129,11 +132,9 @@ int main(int argc, char** argv) {
         MPI_Recv(&matrices.alpha, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, NULL);
     }
     random_fill_LT_R(&matrices.l, &matrices.r);
-    if (me == 0) {
-        Matrix b = iter_mpi(&matrices, nprocs, me);
-        print_output(&matrices, &b);
-        matrix_free(&b);
-    }
+    Matrix b = iter_mpi(&matrices, nprocs, me);
+    if (me == 0) print_output(&matrices, &b);
+    matrix_free(&b);
     matrices_free(&matrices);
 
     MPI_Finalize();
