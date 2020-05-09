@@ -30,35 +30,26 @@ Matrix matrix_clone(Matrix const* const other) {
 }
 
 noreturn static void
-print_error(size_t rows, size_t columns, size_t row, size_t column) {
+out_of_bounds(size_t rows, size_t columns, size_t row, size_t column) {
     eprintf(
-        "Paniced at access out of bounds. "
         "Bounds were (%zu, %zu) but index is (%zu, %zu)\n",
         rows,
         columns,
         row,
         column);
-    void** func_addrs = malloc(sizeof(void*) * 30);
-    int size = backtrace(func_addrs, 30);
-    char const* const* const bt =
-        (char const* const*) backtrace_symbols(func_addrs, size);
-    eputs("Backtrace\n");
-    for (char const* const* i = bt + 1; i != bt + size; ++i) {
-        eprintf("%s\n", *i);
-    }
-    abort();
+    debug_print_backtrace("access out of bounds");
 }
 
 double const* matrix_at(Matrix const* a, size_t row, size_t column) {
     if (row >= a->rows || column >= a->columns) {
-        print_error(a->rows, a->columns, row, column);
+        out_of_bounds(a->rows, a->columns, row, column);
     }
     return a->data + (row * a->columns + column);
 }
 
 double* matrix_at_mut(Matrix* a, size_t row, size_t column) {
     if (row >= a->rows || column >= a->columns) {
-        print_error(a->rows, a->columns, row, column);
+        out_of_bounds(a->rows, a->columns, row, column);
     }
     return a->data + (row * a->columns + column);
 }

@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     Matrices matrices = {0};
     G_ME = me;
+    if (me == 0) eprintf("Filename: %s\n", argv[1]);
     eprintf("PID: %d\n", getpid());
 
     if (me == 0) {
@@ -42,7 +43,7 @@ int main(int argc, char** argv) {
         }
         size_t send_size_t[NSIZE_T] = {
             matrices.num_iterations,
-            matrices.a._total_items,
+            matrices.a.current_items,
             matrices.a.n_rows,
             matrices.a.n_cols,
             matrices.a_transpose.current_items,

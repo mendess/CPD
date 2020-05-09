@@ -33,6 +33,7 @@ double* matrix_at_mut(Matrix* a, size_t row, size_t column);
 #endif
 
 void matrix_print(Matrix const* m);
+
 void matrix_print_with_name(Matrix const* m, char const* name);
 
 void matrix_free(Matrix* m);

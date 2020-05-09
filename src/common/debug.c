@@ -1,9 +1,10 @@
-#ifndef MPI_DEBUG_H
-#define MPI_DEBUG_H
 #include "common/debug.h"
 
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <stdnoreturn.h>
+#include <execinfo.h>
 
 void gdb_attach_point(char const* const file, int line) {
     volatile int i = 0;
@@ -25,4 +26,15 @@ void gdb_attach_point(char const* const file, int line) {
     }
 }
 
-#endif // MPI_DEBUG_H
+noreturn void debug_print_backtrace(char const* const msg) {
+    eprintf("Panicked at '%s'", msg);
+    void** func_addrs = malloc(sizeof(void*) * 30);
+    int size = backtrace(func_addrs, 30);
+    char const* const* const bt =
+        (char const* const*) backtrace_symbols(func_addrs, size);
+    eputs("Backtrace\n");
+    for (char const* const* i = bt + 1; i != bt + size; ++i) {
+        eprintf("%s\n", *i);
+    }
+    abort();
+}
