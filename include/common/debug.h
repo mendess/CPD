@@ -12,10 +12,10 @@ noreturn void debug_print_backtrace(char const*);
 #ifdef MPI
 extern int G_ME;
 #    define eprintf(fmt, ...) \
-        (fprintf(stderr, "Node %d: " fmt, G_ME, __VA_ARGS__))
+        (fprintf(stderr, "Node %d: " fmt, G_ME, __VA_ARGS__),fflush(stderr))
 #else
 #    define G_ME 0
-#    define eprintf(...) (fprintf(stderr, ##__VA_ARGS__))
+#    define eprintf(...) (fprintf(stderr, ##__VA_ARGS__),fflush(stderr))
 #endif // MPI
 #define eputs(s) eprintf("%s", (s))
 

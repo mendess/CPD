@@ -27,7 +27,7 @@ void gdb_attach_point(char const* const file, int line) {
 }
 
 noreturn void debug_print_backtrace(char const* const msg) {
-    eprintf("Panicked at '%s'", msg);
+    eprintf("Panicked at '%s'\n", msg);
     void** func_addrs = malloc(sizeof(void*) * 30);
     int size = backtrace(func_addrs, 30);
     char const* const* const bt =

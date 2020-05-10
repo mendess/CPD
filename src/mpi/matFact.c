@@ -25,75 +25,79 @@ typedef struct {
 
 static size_t start_chunk(size_t proc_id, int nprocs, size_t num_iters);
 static Slice slice_rows(int proc_id, int nprocs, size_t n_rows);
-static MPI_Request* bcast_matrix(Matrix* b, MPI_Request* request);
-static void send_matrix_slice(Matrix const* m, int to, Slice s);
-static void receive_matrix_slice(Matrix* m, int from, Slice s);
+static void bcast_matrix(Matrix* b);
+static size_t proc_from_chunk(size_t k, int nprocs, size_t num_iters);
+static void send_double(double const* s, int to);
+static double receive_double(int from);
 
-void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* b) {
-    assert(l->rows == r->rows);
-    for (size_t i = 0; i < l->columns; i++) {
-        for (size_t j = 0; j < r->columns; ++j) {
+static void send_double(double const* const s, int const to) {
+    if (MPI_Send(s, 1, MPI_DOUBLE, to, 0, MPI_COMM_WORLD)) {
+        debug_print_backtrace("send double failed");
+    }
+}
+
+static double receive_double(int const from) {
+    double d;
+    if (MPI_Recv(&d, 1, MPI_DOUBLE, from, 0, MPI_COMM_WORLD, NULL)) {
+        debug_print_backtrace("receive double failed");
+    }
+    return d;
+}
+
+void team_matrix_b_full(
+    Matrices const* const m, Matrix* b, int const me, int const nprocs) {
+    assert(m->l.rows == m->r.rows);
+    for (size_t i = 0; i < m->l.columns; i++) {
+        for (size_t j = 0; j < m->r.columns; ++j) {
             double bij = 0;
-            for (size_t k = 0; k < l->rows; ++k) {
-                bij += *MATRIX_AT(l, k, i) * *MATRIX_AT(r, k, j);
+            for (size_t k = 0; k < m->l.rows; ++k) {
+                size_t const owner = proc_from_chunk(k, nprocs, m->l.rows);
+                if (me == 0) {
+                    if (me >= 0 && owner == (unsigned) me) {
+                        bij +=
+                            *MATRIX_AT(&m->l, k, i) * *MATRIX_AT(&m->r, k, j);
+                    } else {
+                        bij += receive_double(owner) * receive_double(owner);
+                    }
+                } else {
+                    if (me >= 0 && owner == (unsigned) me) {
+                        send_double(MATRIX_AT(&m->l, k, i), 0);
+                        send_double(MATRIX_AT(&m->r, k, j), 0);
+                    }
+                }
             }
             *MATRIX_AT_MUT(b, i, j) = bij;
         }
     }
 }
 
-void matrix_b(
-    Matrix const* const l,
-    Matrix const* const r,
-    Matrix* const b,
-    CompactMatrix const* const a) {
+void team_matrix_b(
+    Matrices const* const m, Matrix* const b, int const me, int const nprocs) {
 
-    Item const* iter = a->items;
-    Item const* const end = iter + a->current_items;
+    Item const* iter = m->a.items;
+    Item const* const end = iter + m->a.current_items;
     while (iter != end) {
         double bij = 0;
-        for (size_t k = 0; k < l->rows; k++) {
-            bij += *MATRIX_AT(l, k, iter->row) * *MATRIX_AT(r, k, iter->column);
+        for (size_t k = 0; k < m->l.rows; k++) {
+            size_t const owner = proc_from_chunk(k, nprocs, m->l.rows);
+            if (me == 0) {
+                if (me >= 0 && owner == (unsigned) me) {
+                    bij += *MATRIX_AT(&m->l, k, iter->row) *
+                           *MATRIX_AT(&m->r, k, iter->column);
+                } else {
+                    bij += receive_double(owner) * receive_double(owner);
+                }
+            } else {
+                if (me >= 0 && owner == (unsigned) me) {
+                    send_double(MATRIX_AT(&m->l, k, iter->row), 0);
+                    send_double(MATRIX_AT(&m->r, k, iter->column), 0);
+                }
+            }
         }
         *MATRIX_AT_MUT(b, iter->row, iter->column) = bij;
         ++iter;
     }
 }
-
-/* void team_matrix_b( */
-/*     Matrix const* const l, */
-/*     Matrix const* const r, */
-/*     Matrix* const b, */
-/*     CompactMatrix const* const a, */
-/*     int const me, */
-/*     int const nprocs) { */
-
-/*     Item const* iter = a->items; */
-/*     Item const* const end = iter + a->current_items; */
-/*     int teammate = 0; */
-/*     Slice s = slice_rows(me, nprocs, l->rows); */
-/*     while (teammate < me) { */
-/*     } */
-/*     while (teammate == me) { */
-/*     } */
-/*     while (iter != end) { */
-/*         if (teammate < me) { */
-/*         } else if (teammate == me) { */
-/*             // I got this */
-/*         } else { */
-/*             // get */
-/*         } */
-/*         /1* double bij = 0; *1/ */
-/*         for (size_t k = 0; k < l->rows; k++) { */
-/*             eprintf("(i,j,k) = (%zu, %zu, %zu)\n", iter->row, iter->column,
- * k); */
-/*             /1* bij += *MATRIX_AT(l, k, iter->row) * *MATRIX_AT(r, k, */
-/*              * iter->column); *1/ */
-/*         } */
-/*         /1* *MATRIX_AT_MUT(b, iter->row, iter->column) = bij; *1/ */
-/*         ++iter; */
-/*     } */
-/* } */
 
 void next_iter_l(
     Matrices const* const matrices,
@@ -166,47 +170,29 @@ start_chunk(size_t const proc_id, int const nprocs, size_t const num_iters) {
     return x + (proc_id < rem ? proc_id : rem);
 }
 
+size_t
+proc_from_chunk(size_t const k, int const nprocs, size_t const num_iters) {
+    for (int i = 0; i < nprocs; ++i) {
+        size_t try_k = start_chunk(i, nprocs, num_iters);
+        size_t try_k_end = start_chunk(i + 1, nprocs, num_iters);
+        if (try_k <= k && k < try_k_end) {
+            return i;
+        }
+    }
+    eprintf("k = %zu\n", k);
+    debug_print_backtrace("k out of range");
+}
+
 Slice slice_rows(int const proc_id, int const nprocs, size_t const n_rows) {
     return (Slice){
         .start = start_chunk(proc_id, nprocs, n_rows),
         .end = start_chunk(proc_id + 1, nprocs, n_rows)};
 }
 
-MPI_Request* bcast_matrix(Matrix* const b, MPI_Request* const request) {
-    if (MPI_Ibcast(
-            b->data,
-            b->columns * b->rows,
-            MPI_DOUBLE,
-            0,
-            MPI_COMM_WORLD,
-            request)) {
+void bcast_matrix(Matrix* const b) {
+    if (MPI_Bcast(
+            b->data, b->columns * b->rows, MPI_DOUBLE, 0, MPI_COMM_WORLD)) {
         debug_print_backtrace("couldn't broadcast matrix");
-    }
-    return request;
-}
-
-void send_matrix_slice(Matrix const* const m, int const to, Slice const s) {
-    if (MPI_Send(
-            MATRIX_AT(m, s.start, 0),
-            (s.end - s.start) * m->columns,
-            MPI_DOUBLE,
-            to,
-            0,
-            MPI_COMM_WORLD)) {
-        debug_print_backtrace("couldn't send matrix slice");
-    }
-}
-
-void receive_matrix_slice(Matrix* const m, int const from, Slice const s) {
-    if (MPI_Recv(
-            MATRIX_AT_MUT(m, s.start, 0),
-            (s.end - s.start) * m->columns,
-            MPI_DOUBLE,
-            from,
-            0,
-            MPI_COMM_WORLD,
-            NULL)) {
-        debug_print_backtrace("couldn't receive matrix slice");
     }
 }
 
@@ -225,36 +211,14 @@ Matrix iter_mpi(Matrices* const matrices, int nprocs, int const me) {
     Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
     Slice s = slice_rows(me, nprocs, matrices->l.rows);
     for (size_t i = 0; i < matrices->num_iterations; ++i) {
-        MPI_Request b_broadcast;
-        /* team_matrix_b(&matrices->l, &matrices->r, &b, &matrices->a); */
-        if (me == 0) {
-            matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
-        }
-        bcast_matrix(&b, &b_broadcast);
+        team_matrix_b(matrices, &b, me, nprocs);
+        bcast_matrix(&b);
         next_iter_l(matrices, s, &aux_l, &b);
         next_iter_r(matrices, s, &aux_r, &b);
         swap(&matrices->l, &aux_l);
         swap(&matrices->r, &aux_r);
-        if (me != 0) {
-            send_matrix_slice(&matrices->l, 0, s);
-            send_matrix_slice(&matrices->r, 0, s);
-        } else {
-            for (int proc = 1; proc < nprocs; ++proc) {
-                receive_matrix_slice(
-                    &matrices->l,
-                    proc,
-                    slice_rows(proc, nprocs, matrices->l.rows));
-            }
-            for (int proc = 1; proc < nprocs; ++proc) {
-                receive_matrix_slice(
-                    &matrices->r,
-                    proc,
-                    slice_rows(proc, nprocs, matrices->l.rows));
-            }
-        }
-        MPI_Wait(&b_broadcast, NULL);
     }
-    matrix_b_full(&matrices->l, &matrices->r, &b);
+    team_matrix_b_full(matrices, &b, me, nprocs);
     matrix_free(&aux_l);
     matrix_free(&aux_r);
     return b;

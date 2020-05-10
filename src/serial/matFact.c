@@ -1,6 +1,7 @@
 #include "serial/matFact.h"
 
 #include "common/compact_matrix.h"
+#include "common/debug.h"
 #include "common/parser.h"
 
 #include <assert.h>
@@ -96,12 +97,14 @@ Matrix iter(Matrices* matrices) {
     Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
     for (size_t i = 0; i < matrices->num_iterations; i++) {
         matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
+        matrix_print(&b);
         next_iter_l(matrices, &aux_l, &b);
         next_iter_r(matrices, &aux_r, &b);
         swap(&matrices->l, &aux_l);
         swap(&matrices->r, &aux_r);
     }
     matrix_b_full(&matrices->l, &matrices->r, &b);
+    matrix_print(&b);
     matrix_free(&aux_l);
     matrix_free(&aux_r);
     return b;
