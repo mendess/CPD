@@ -15,8 +15,10 @@ extern int G_ME;
         (fprintf(stderr, "Node %d: " fmt, G_ME, __VA_ARGS__),fflush(stderr))
 #else
 #    define G_ME 0
-#    define eprintf(...) (fprintf(stderr, ##__VA_ARGS__),fflush(stderr))
+#    define eprintf(...) (fprintf(stderr, __VA_ARGS__),fflush(stderr))
 #endif // MPI
+#define eprintln(fmt, ...) eprintf(fmt "\n", __VA_ARGS__)
 #define eputs(s) eprintf("%s", (s))
+#define eputln(s) eprintln("%s", (s))
 
 #endif // MPI_DEBUG_H

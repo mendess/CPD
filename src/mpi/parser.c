@@ -1,11 +1,13 @@
 #include "common/parser.h"
+
 #include "mpi/parser.h"
 
 #include <stdlib.h>
 
 ParserError parse_file_lt(char const* filename, Matrices* matrices) {
     char* contents = read_file(filename);
-    if (contents == NULL) return PARSER_ERROR_IO;
+    if (contents == NULL)
+        return PARSER_ERROR_IO;
     StrIter content_iter = {.str = contents};
 
     Header header;
@@ -20,8 +22,8 @@ ParserError parse_file_lt(char const* filename, Matrices* matrices) {
     CompactMatrix a_transpose =
         cmatrix_make(header.items, header.users, header.non_zero_elems);
 
-    error = parse_matrix_a(
-        &content_iter, header.non_zero_elems, &a, &a_transpose);
+    error =
+        parse_matrix_a(&content_iter, header.non_zero_elems, &a, &a_transpose);
     free(contents);
     if (error != PARSER_ERROR_OK) {
         cmatrix_free(&a);
@@ -29,14 +31,12 @@ ParserError parse_file_lt(char const* filename, Matrices* matrices) {
         return error;
     }
     // Transposed
-    Matrix lt = matrix_make(header.features, header.users);
-    Matrix r = matrix_make(header.features, header.items);
     cmatrix_sort(&a_transpose);
     *matrices = (Matrices){
         .num_iterations = header.num_iterations,
         .alpha = header.alpha,
-        .l = lt,
-        .r = r,
+        .l = {.data = NULL, .rows = header.features, .columns = header.users},
+        .r = {.data = NULL, .rows = header.features, .columns = header.items},
         .a = a,
         .a_transpose = a_transpose,
     };

@@ -1,6 +1,8 @@
 #ifndef MATRIX_H
 #define MATRIX_H
-#define _DEFAULT_SOURCE
+#ifndef _DEFAULT_SOURCE
+#    define _DEFAULT_SOURCE
+#endif
 #include "common/compact_matrix.h"
 
 #include <assert.h>
