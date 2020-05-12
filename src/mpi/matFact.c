@@ -20,11 +20,11 @@ int G_ME;
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
 static void bcast_matrix(Matrix* b);
-static void send_double(double const* s, int to);
+static void send_double(double const* s, int to, int count);
 static double receive_double(int from);
 
-static void send_double(double const* const s, int const to) {
-    if (MPI_Send(s, 1, MPI_DOUBLE, to, 0, MPI_COMM_WORLD)) {
+static void send_double(double const* const s, int const to, int const count) {
+    if (MPI_Send(s, count, MPI_DOUBLE, to, 0, MPI_COMM_WORLD)) {
         debug_print_backtrace("send double failed");
     }
 }
@@ -35,6 +35,19 @@ static double receive_double(int const from) {
         debug_print_backtrace("receive double failed");
     }
     return d;
+}
+
+void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* b) {
+    assert(l->rows == r->rows);
+    for (size_t i = 0; i < l->columns; i++) {
+        for (size_t j = 0; j < r->columns; ++j) {
+            double bij = 0;
+            for (size_t k = 0; k < l->rows; ++k) {
+                bij += *MATRIX_AT(l, k, i) * *MATRIX_AT(r, k, j);
+            }
+            *MATRIX_AT_MUT(b, i, j) = bij;
+        }
+    }
 }
 
 void team_matrix_b_full(
@@ -62,13 +75,31 @@ void team_matrix_b_full(
                 } else {
                     if (s.start <= k && k < s.end) {
                         size_t k_ = k - s.start;
-                        send_double(MATRIX_AT(&m->l, k_, i), 0);
-                        send_double(MATRIX_AT(&m->r, k_, j), 0);
+                        send_double(MATRIX_AT(&m->l, k_, i), 0, 1);
+                        send_double(MATRIX_AT(&m->r, k_, j), 0, 1);
                     }
                 }
             }
             *MATRIX_AT_MUT(b, i, j) = bij;
         }
+    }
+}
+
+void matrix_b(
+    Matrix const* const l,
+    Matrix const* const r,
+    Matrix* const b,
+    CompactMatrix const* const a) {
+
+    Item const* iter = a->items;
+    Item const* const end = iter + a->current_items;
+    while (iter != end) {
+        double bij = 0;
+        for (size_t k = 0; k < l->rows; k++) {
+            bij += *MATRIX_AT(l, k, iter->row) * *MATRIX_AT(r, k, iter->column);
+        }
+        *MATRIX_AT_MUT(b, iter->row, iter->column) = bij;
+        ++iter;
     }
 }
 
@@ -97,8 +128,8 @@ void team_matrix_b(
             } else {
                 if (s.start <= k && k < s.end) {
                     size_t k_ = k - s.start;
-                    send_double(MATRIX_AT(&m->l, k_, iter->row), 0);
-                    send_double(MATRIX_AT(&m->r, k_, iter->column), 0);
+                    send_double(MATRIX_AT(&m->l, k_, iter->row), 0, 1);
+                    send_double(MATRIX_AT(&m->r, k_, iter->column), 0, 1);
                 }
             }
         }
@@ -170,21 +201,55 @@ void bcast_matrix(Matrix* const b) {
     }
 }
 
+void send_matrix(Matrix const* const m, int const to) {
+    if (MPI_Send(
+            m->data, m->rows * m->columns, MPI_DOUBLE, to, 0, MPI_COMM_WORLD)) {
+        debug_print_backtrace("couldn't send matrix slice");
+    }
+}
+
+void receive_matrix_slice(Matrix* const m, int const from, Slice const s) {
+    if (MPI_Recv(
+            MATRIX_AT_MUT(m, s.start, 0),
+            (s.end - s.start) * m->columns,
+            MPI_DOUBLE,
+            from,
+            0,
+            MPI_COMM_WORLD,
+            NULL)) {
+        debug_print_backtrace("couldn't receive matrix slice");
+    }
+}
+
 // This function is only define for nprocs > l->rows
 Matrix iter_mpi(
     Matrices* const matrices, int const nprocs, int const me, size_t const nk) {
+    (void) nk; // FIXME: Remove
     Matrix aux_l = matrix_clone(&matrices->l);
     Matrix aux_r = matrix_clone(&matrices->r);
     Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
     for (size_t i = 0; i < matrices->num_iterations; ++i) {
-        team_matrix_b(matrices, &b, me, nprocs, nk);
+        if (me == 0) {
+            /* eprintln("Progress %zu/%zu", i + 1, matrices->num_iterations); */
+            matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
+        }
         bcast_matrix(&b);
         next_iter_l(matrices, &aux_l, &b);
         next_iter_r(matrices, &aux_r, &b);
         swap(&matrices->l, &aux_l);
         swap(&matrices->r, &aux_r);
+        if (me != 0) {
+            send_matrix(&matrices->l, 0);
+            send_matrix(&matrices->r, 0);
+        } else {
+            for (int proc = 1; proc < nprocs; ++proc) {
+                Slice proc_s = slice_rows(proc, nprocs, matrices->l.rows);
+                receive_matrix_slice(&matrices->l, proc, proc_s);
+                receive_matrix_slice(&matrices->r, proc, proc_s);
+            }
+        }
     }
-    team_matrix_b_full(matrices, &b, me, nprocs, nk);
+    matrix_b_full(&matrices->l, &matrices->r, &b);
     matrix_free(&aux_l);
     matrix_free(&aux_r);
     return b;

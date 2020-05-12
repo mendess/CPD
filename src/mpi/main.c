@@ -12,8 +12,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 typedef struct SizeTPacket {
     size_t num_iterations;
@@ -88,11 +88,16 @@ int main(int argc, char** argv) {
         cmatrix_bcast_items(matrices.a_transpose.items, packet.num_items, 0);
         MPI_Bcast(&matrices.alpha, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        size_t k = slice_len(me, nprocs, packet.k);
+        size_t k = me == 0 ? packet.k : slice_len(me, nprocs, packet.k);
         matrices.l = matrix_make(k, packet.i);
         matrices.r = matrix_make(k, packet.j);
 
-        random_fill_LT_R_mpi(&matrices.l, &matrices.r, me, nprocs, packet.k);
+        if (me == 0) {
+            random_fill_LT_R(&matrices.l, &matrices.r);
+        } else {
+            random_fill_LT_R_mpi(
+                &matrices.l, &matrices.r, me, nprocs, packet.k);
+        }
         Matrix b = iter_mpi(&matrices, nprocs, me, packet.k);
         if (me == 0)
             print_output(&matrices, &b);

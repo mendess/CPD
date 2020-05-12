@@ -1,6 +1,8 @@
 #include "common/debug.h"
 #include "mpi/util.h"
 
+#include <stdio.h>
+
 void swap(Matrix* const a, Matrix* const b) {
     Matrix tmp = *a;
     *a = *b;

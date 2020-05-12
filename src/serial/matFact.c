@@ -92,11 +92,11 @@ static inline void swap(Matrix* a, Matrix* b) {
 }
 
 Matrix iter(Matrices* matrices) {
-    matrix_print(&matrices->l);
     Matrix aux_l = matrix_clone(&matrices->l);
     Matrix aux_r = matrix_clone(&matrices->r);
     Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
     for (size_t i = 0; i < matrices->num_iterations; i++) {
+        eprintln("%zu/%zu", i+1, matrices->num_iterations);
         matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
         next_iter_l(matrices, &aux_l, &b);
         next_iter_r(matrices, &aux_r, &b);

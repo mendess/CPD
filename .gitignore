@@ -58,6 +58,7 @@ target/
 *.jpg
 matFact*
 !matFact.c
+!matFact.h
 *.toc
 *.aux
 *.log
