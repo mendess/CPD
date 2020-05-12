@@ -10,6 +10,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #ifndef MPI
 #    define MPI
@@ -209,21 +210,22 @@ void bcast_matrix(Matrix* const b) {
 }
 
 void send_matrix(Matrix const* const m, int const to, int flag) {
+    MPI_Request send_request;
     if (MPI_Isend(
-            m->data, m->rows * m->columns, MPI_DOUBLE, to, flag, MPI_COMM_WORLD, NULL)) {
+            m->data, m->rows * m->columns, MPI_DOUBLE, to, flag, MPI_COMM_WORLD, &send_request)) {
         debug_print_backtrace("couldn't send matrix slice");
     }
 }
 
-void receive_matrix_slice(Matrix* const m, int const from, Slice const s, int flag) {
-    if (MPI_Recv(
+void receive_matrix_slice(Matrix* const m, int const from, Slice const s, int flag, MPI_Request * request) {
+    if (MPI_Irecv(
             MATRIX_AT_MUT(m, s.start, 0),
             (s.end - s.start) * m->columns,
             MPI_DOUBLE,
             from,
             flag,
             MPI_COMM_WORLD,
-            NULL)) {
+            request)) {
         debug_print_backtrace("couldn't receive matrix slice");
     }
 }
@@ -232,12 +234,18 @@ void receive_matrix_slice(Matrix* const m, int const from, Slice const s, int fl
 Matrix iter_mpi(
     Matrices* const matrices, int const nprocs, int const me, size_t const nk) {
     (void) nk; // FIXME: Remove
+    MPI_Request *recv_request;
+    MPI_Status *status;
+    if(me == 0){
+        recv_request = malloc(sizeof(MPI_Request) * (nprocs -1) * 2);
+        status = malloc(sizeof(MPI_Status) * (nprocs -1) * 2);
+    }
     Matrix aux_l = matrix_clone(&matrices->l);
     Matrix aux_r = matrix_clone(&matrices->r);
     Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
     for (size_t i = 0; i < matrices->num_iterations; ++i) {
         if (me == 0) {
-            /* eprintln("Progress %zu/%zu", i + 1, matrices->num_iterations); */
+            //eprintln("Progress %zu/%zu", i + 1, matrices->num_iterations);
             matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
         }
         bcast_matrix(&b);
@@ -248,15 +256,18 @@ Matrix iter_mpi(
         if (me != 0) {
             send_matrix(&matrices->l, 0, 0);
             send_matrix(&matrices->r, 0, 1);
-            MPI_Barrier( MPI_COMM_WORLD);
         } else {
             for (int proc = 1; proc < nprocs; ++proc) {
                 Slice proc_s = slice_rows(proc, nprocs, matrices->l.rows);
-                receive_matrix_slice(&matrices->l, proc, proc_s, 0);
-                receive_matrix_slice(&matrices->r, proc, proc_s, 1);
-                MPI_Barrier( MPI_COMM_WORLD);
+                receive_matrix_slice(&matrices->l, proc, proc_s, 0, &recv_request[proc - 1]);
+                receive_matrix_slice(&matrices->r, proc, proc_s, 1, &recv_request[proc - 1 + nprocs - 1]);
             }
+            MPI_Waitall((nprocs - 1) * 2, recv_request, status);
         }
+    }
+    if(me == 0){
+        free(recv_request);
+        free(status);
     }
     matrix_b_full(&matrices->l, &matrices->r, &b);
     matrix_free(&aux_l);
