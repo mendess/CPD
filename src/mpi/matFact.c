@@ -20,9 +20,12 @@ int G_ME;
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
 static void bcast_matrix(Matrix* b);
+/*
 static void send_double(double const* s, int to, int count);
 static double receive_double(int from);
+*/
 
+/*
 static void send_double(double const* const s, int const to, int const count) {
     if (MPI_Send(s, count, MPI_DOUBLE, to, 0, MPI_COMM_WORLD)) {
         debug_print_backtrace("send double failed");
@@ -36,7 +39,7 @@ static double receive_double(int const from) {
     }
     return d;
 }
-
+*/
 void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* b) {
     assert(l->rows == r->rows);
     for (size_t i = 0; i < l->columns; i++) {
@@ -50,6 +53,7 @@ void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* b) {
     }
 }
 
+/*
 void team_matrix_b_full(
     Matrices const* const m,
     Matrix* b,
@@ -84,6 +88,7 @@ void team_matrix_b_full(
         }
     }
 }
+*/
 
 void matrix_b(
     Matrix const* const l,
@@ -103,6 +108,7 @@ void matrix_b(
     }
 }
 
+/*
 void team_matrix_b(
     Matrices const* const m,
     Matrix* const b,
@@ -137,6 +143,7 @@ void team_matrix_b(
         ++iter;
     }
 }
+*/
 
 void next_iter_l(
     Matrices const* const matrices,
@@ -201,20 +208,20 @@ void bcast_matrix(Matrix* const b) {
     }
 }
 
-void send_matrix(Matrix const* const m, int const to) {
-    if (MPI_Send(
-            m->data, m->rows * m->columns, MPI_DOUBLE, to, 0, MPI_COMM_WORLD)) {
+void send_matrix(Matrix const* const m, int const to, int flag) {
+    if (MPI_Isend(
+            m->data, m->rows * m->columns, MPI_DOUBLE, to, flag, MPI_COMM_WORLD, NULL)) {
         debug_print_backtrace("couldn't send matrix slice");
     }
 }
 
-void receive_matrix_slice(Matrix* const m, int const from, Slice const s) {
+void receive_matrix_slice(Matrix* const m, int const from, Slice const s, int flag) {
     if (MPI_Recv(
             MATRIX_AT_MUT(m, s.start, 0),
             (s.end - s.start) * m->columns,
             MPI_DOUBLE,
             from,
-            0,
+            flag,
             MPI_COMM_WORLD,
             NULL)) {
         debug_print_backtrace("couldn't receive matrix slice");
@@ -239,13 +246,15 @@ Matrix iter_mpi(
         swap(&matrices->l, &aux_l);
         swap(&matrices->r, &aux_r);
         if (me != 0) {
-            send_matrix(&matrices->l, 0);
-            send_matrix(&matrices->r, 0);
+            send_matrix(&matrices->l, 0, 0);
+            send_matrix(&matrices->r, 0, 1);
+            MPI_Barrier( MPI_COMM_WORLD);
         } else {
             for (int proc = 1; proc < nprocs; ++proc) {
                 Slice proc_s = slice_rows(proc, nprocs, matrices->l.rows);
-                receive_matrix_slice(&matrices->l, proc, proc_s);
-                receive_matrix_slice(&matrices->r, proc, proc_s);
+                receive_matrix_slice(&matrices->l, proc, proc_s, 0);
+                receive_matrix_slice(&matrices->r, proc, proc_s, 1);
+                MPI_Barrier( MPI_COMM_WORLD);
             }
         }
     }
