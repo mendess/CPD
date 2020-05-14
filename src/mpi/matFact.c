@@ -20,22 +20,6 @@ int G_ME;
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
 static void bcast_matrix(Matrix* b);
-static void send_double(double const* s, int to, int count);
-static double receive_double(int from);
-
-static void send_double(double const* const s, int const to, int const count) {
-    if (MPI_Send(s, count, MPI_DOUBLE, to, 0, MPI_COMM_WORLD)) {
-        debug_print_backtrace("send double failed");
-    }
-}
-
-static double receive_double(int const from) {
-    double d;
-    if (MPI_Recv(&d, 1, MPI_DOUBLE, from, 0, MPI_COMM_WORLD, NULL)) {
-        debug_print_backtrace("receive double failed");
-    }
-    return d;
-}
 
 void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* b) {
     assert(l->rows == r->rows);
@@ -44,41 +28,6 @@ void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* b) {
             double bij = 0;
             for (size_t k = 0; k < l->rows; ++k) {
                 bij += *MATRIX_AT(l, k, i) * *MATRIX_AT(r, k, j);
-            }
-            *MATRIX_AT_MUT(b, i, j) = bij;
-        }
-    }
-}
-
-void team_matrix_b_full(
-    Matrices const* const m,
-    Matrix* b,
-    int const me,
-    int const nprocs,
-    size_t const nk) {
-
-    assert(m->l.rows == m->r.rows);
-    Slice s = slice_rows(me, nprocs, nk);
-    for (size_t i = 0; i < m->l.columns; i++) {
-        for (size_t j = 0; j < m->r.columns; ++j) {
-            double bij = 0;
-            for (size_t k = 0; k < nk; ++k) {
-                if (me == 0) {
-                    size_t const owner = proc_from_chunk(k, nprocs, nk);
-                    if (s.start <= k && k < s.end) {
-                        size_t k_ = k - s.start;
-                        bij +=
-                            *MATRIX_AT(&m->l, k_, i) * *MATRIX_AT(&m->r, k_, j);
-                    } else {
-                        bij += receive_double(owner) * receive_double(owner);
-                    }
-                } else {
-                    if (s.start <= k && k < s.end) {
-                        size_t k_ = k - s.start;
-                        send_double(MATRIX_AT(&m->l, k_, i), 0, 1);
-                        send_double(MATRIX_AT(&m->r, k_, j), 0, 1);
-                    }
-                }
             }
             *MATRIX_AT_MUT(b, i, j) = bij;
         }
@@ -103,52 +52,18 @@ void matrix_b(
     }
 }
 
-void team_matrix_b(
-    Matrices const* const m,
-    Matrix* const b,
-    int const me,
-    int const nprocs,
-    size_t const nk) {
-
-    Item const* iter = m->a.items;
-    Item const* const end = iter + m->a.current_items;
-    Slice s = slice_rows(me, nprocs, nk);
-    while (iter != end) {
-        double bij = 0;
-        for (size_t k = 0; k < nk; k++) {
-            if (me == 0) { // TODO: Lift the if up
-                if (s.start <= k && k < s.end) {
-                    size_t k_ = k - s.start;
-                    bij += *MATRIX_AT(&m->l, k_, iter->row) *
-                           *MATRIX_AT(&m->r, k_, iter->column);
-                } else {
-                    size_t const owner = proc_from_chunk(k, nprocs, nk);
-                    bij += receive_double(owner) * receive_double(owner);
-                }
-            } else {
-                if (s.start <= k && k < s.end) {
-                    size_t k_ = k - s.start;
-                    send_double(MATRIX_AT(&m->l, k_, iter->row), 0, 1);
-                    send_double(MATRIX_AT(&m->r, k_, iter->column), 0, 1);
-                }
-            }
-        }
-        *MATRIX_AT_MUT(b, iter->row, iter->column) = bij;
-        ++iter;
-    }
-}
-
 void next_iter_l(
     Matrices const* const matrices,
     Matrix* const aux_l,
-    Matrix const* const b) {
+    Matrix const* const b,
+    size_t nK) {
 
     Item const* iter = matrices->a.items;
     Item const* const end = iter + matrices->a.current_items;
 
     while (iter != end) {
         size_t counter = 0;
-        for (size_t k = 0; k < matrices->l.rows; ++k) {
+        for (size_t k = 0; k < nK; ++k) {
             double aux = 0;
             Item const* line_iter = iter;
             size_t const row = line_iter->row;
@@ -172,9 +87,10 @@ void next_iter_l(
 void next_iter_r(
     Matrices const* const matrices,
     Matrix* const aux_r,
-    Matrix const* const b) {
+    Matrix const* const b,
+    size_t nK) {
 
-    for (size_t k = 0; k < matrices->r.rows; ++k) {
+    for (size_t k = 0; k < nK; ++k) {
         Item const* iter = matrices->a_transpose.items;
         Item const* const end = iter + matrices->a_transpose.current_items;
         while (iter != end) {
@@ -223,8 +139,7 @@ void receive_matrix_slice(Matrix* const m, int const from, Slice const s) {
 
 // This function is only define for nprocs > l->rows
 Matrix iter_mpi(
-    Matrices* const matrices, int const nprocs, int const me, size_t const nk) {
-    (void) nk; // FIXME: Remove
+    Matrices* const matrices, int const nprocs, int const me) {
     Matrix aux_l = matrix_clone(&matrices->l);
     Matrix aux_r = matrix_clone(&matrices->r);
     Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
@@ -234,8 +149,8 @@ Matrix iter_mpi(
             matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
         }
         bcast_matrix(&b);
-        next_iter_l(matrices, &aux_l, &b);
-        next_iter_r(matrices, &aux_r, &b);
+        next_iter_l(matrices, &aux_l, &b, me == 0 ? slice_len(0, nprocs, aux_l.rows) : aux_l.rows);
+        next_iter_r(matrices, &aux_r, &b, me == 0 ? slice_len(0, nprocs, aux_r.rows) : aux_r.rows);
         swap(&matrices->l, &aux_l);
         swap(&matrices->r, &aux_r);
         if (me != 0) {

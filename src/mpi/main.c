@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
             matrices.l = matrix_make(packet.k, packet.i);
             matrices.r = matrix_make(packet.k, packet.j);
             random_fill_LT_R(&matrices.l, &matrices.r);
-            Matrix b = iter_mpi(&matrices, 1, me, packet.k);
+            Matrix b = iter_mpi(&matrices, 1, me);
             print_output(&matrices, &b);
             matrix_free(&b);
         }
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
             random_fill_LT_R_mpi(
                 &matrices.l, &matrices.r, me, nprocs, packet.k);
         }
-        Matrix b = iter_mpi(&matrices, nprocs, me, packet.k);
+        Matrix b = iter_mpi(&matrices, nprocs, me);
         if (me == 0)
             print_output(&matrices, &b);
         matrix_free(&b);
