@@ -1,5 +1,7 @@
 #include "common/compact_matrix.h"
 
+#include "common/debug.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,6 +52,8 @@ void cmatrix_add(
 void cmatrix_print(CompactMatrix const* m) {
     Item const* iter = m->items;
     Item const* const end = iter + m->current_items;
+    eprintln("#current_items = %zu", m->current_items);
+    eprintln("(rows, columns) = (%zu, %zu)", m->n_rows, m->n_cols);
     for (size_t row = 0; row < m->n_rows; row++) {
         for (size_t column = 0; column < m->n_cols; column++) {
             if (iter != end && iter->row == row && iter->column == column) {
@@ -61,6 +65,7 @@ void cmatrix_print(CompactMatrix const* m) {
         }
         fputc('\n', stderr);
     }
+    assert(iter == end);
 }
 
 static int item_compare(void const* a, void const* b) {

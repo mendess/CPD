@@ -60,6 +60,8 @@ MatrixIterMut matrix_iter_full_mut(Matrix* m);
 
 void random_fill_LT_R(Matrix* const l, Matrix* const r);
 
+void random_fill_L_RT(Matrix* const l, Matrix* const r);
+
 void random_fill_LR(Matrix* l, Matrix* r);
 
 void matrix_clear(Matrix* m);

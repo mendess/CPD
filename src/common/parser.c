@@ -36,12 +36,7 @@ char* read_file(char const* const filename) {
     return file;
 }
 
-typedef enum FormatSpec {
-    DOUBLE,
-    SIZE_T,
-} FormatSpec;
-
-static size_t scan_line(
+size_t scan_line(
     StrIter* const s_iter, size_t n_specs, FormatSpec const* format, ...) {
     va_list args;
     va_start(args, format);
@@ -118,6 +113,7 @@ ParserError parse_matrix_a(
     size_t const non_zero_elems,
     CompactMatrix* const a,
     CompactMatrix* const a2) {
+
     size_t row, column;
     double value;
     size_t n_lines = 0;
@@ -188,7 +184,7 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
         cmatrix_free(&a_transpose);
         return error;
     }
-    // Transposed
+
     Matrix l = matrix_make(header.users, header.features);
     Matrix r = matrix_make(header.features, header.items);
     cmatrix_sort(&a_transpose);

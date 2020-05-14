@@ -1,10 +1,13 @@
 #include "common/debug.h"
+#define _POSIX_C_SOURCE 200112L
 
+#include <execinfo.h>
+#include <stdbool.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
-#include <execinfo.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 void gdb_attach_point(char const* const file, int line) {
     volatile int i = 0;
@@ -26,15 +29,46 @@ void gdb_attach_point(char const* const file, int line) {
     }
 }
 
+static bool print_trace() {
+    char pid_buf[30];
+    sprintf(pid_buf, "%d", getpid());
+    char name_buf[512];
+    name_buf[readlink("/proc/self/exe", name_buf, 511)] = 0;
+    int child_pid = fork();
+    if (!child_pid) {
+        eprintln("Stack trace for %s pid=%s", name_buf, pid_buf);
+        dup2(2, 1); // redirect output to stderr
+        execlp(
+            "gdb",
+            "gdb",
+            "--batch",
+            "-n",
+            "-ex",
+            "thread",
+            "-ex",
+            "bt full",
+            name_buf,
+            pid_buf,
+            NULL);
+        perror("Gdb failed to start");
+        _exit(1);
+    } else {
+        int status;
+        waitpid(child_pid, &status, 0);
+        return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    }
+}
+
 noreturn void debug_print_backtrace(char const* const msg) {
     eprintf("Panicked at '%s'\n", msg);
-    void** func_addrs = malloc(sizeof(void*) * 30);
-    int size = backtrace(func_addrs, 30);
-    char const* const* const bt =
-        (char const* const*) backtrace_symbols(func_addrs, size);
-    eputs("Backtrace\n");
-    for (char const* const* i = bt + 1; i != bt + size; ++i) {
-        eprintf("%s\n", *i);
+    if (!print_trace()) {
+        void** func_addrs = malloc(sizeof(void*) * 30);
+        int size = backtrace(func_addrs, 30);
+        char const* const* const bt =
+            (char const* const*) backtrace_symbols(func_addrs, size);
+        for (char const* const* i = bt + 1; i != bt + size; ++i) {
+            eprintf("%s\n", *i);
+        }
     }
     abort();
 }

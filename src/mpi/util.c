@@ -1,7 +1,12 @@
-#include "common/debug.h"
 #include "mpi/util.h"
 
+#include "common/debug.h"
+
 #include <stdio.h>
+
+int NPROCS;
+int ME;
+int CHECKER_BOARD_SIDE;
 
 void swap(Matrix* const a, Matrix* const b) {
     Matrix tmp = *a;
@@ -9,23 +14,26 @@ void swap(Matrix* const a, Matrix* const b) {
     *b = tmp;
 }
 
-size_t
-start_chunk(size_t const proc_id, int const nprocs, size_t const num_iters) {
-    size_t const rem = (num_iters % nprocs);
-    size_t const x = proc_id * (num_iters - rem) / nprocs;
-    return x + (proc_id < rem ? proc_id : rem);
+// [x,x,x,x,x,x,x,x,x,x] num_iters = 10
+// proc = 0, nprocs = 3 => 0
+// proc = 1, nprocs = 3 => 3
+// proc = 2, nprocs = 3 => 6
+// proc = 3, nprocs = 3 => 9
+size_t start_chunk(int const proc, int const nprocs, size_t const num_elems) {
+    size_t const rem = (num_elems % nprocs);
+    size_t const x = proc * (num_elems - rem) / nprocs;
+    return x + ((unsigned) proc < rem ? (unsigned) proc : rem);
 }
 
-size_t
-proc_from_chunk(size_t const k, int const nprocs, size_t const num_iters) {
+int proc_from_chunk(
+    size_t const index, int const nprocs, size_t const num_elems) {
     for (int i = 0; i < nprocs; ++i) {
-        size_t try_k = start_chunk(i, nprocs, num_iters);
-        size_t try_k_end = start_chunk(i + 1, nprocs, num_iters);
-        if (try_k <= k && k < try_k_end) {
+        Slice try_bound = slice_rows(i, nprocs, num_elems);
+        if (try_bound.start <= index && index < try_bound.end) {
             return i;
         }
     }
-    eprintf("k = %zu\n", k);
+    eprintf("index = %zu\n", index);
     debug_print_backtrace("k out of range");
 }
 

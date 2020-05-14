@@ -56,7 +56,7 @@ void next_iter_l(
     Matrices const* const matrices,
     Matrix* const aux_l,
     Matrix const* const b,
-    size_t nK) {
+    size_t const nK) {
 
     Item const* iter = matrices->a.items;
     Item const* const end = iter + matrices->a.current_items;
@@ -88,7 +88,7 @@ void next_iter_r(
     Matrices const* const matrices,
     Matrix* const aux_r,
     Matrix const* const b,
-    size_t nK) {
+    size_t const nK) {
 
     for (size_t k = 0; k < nK; ++k) {
         Item const* iter = matrices->a_transpose.items;

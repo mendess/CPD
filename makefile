@@ -49,6 +49,7 @@ override CFLAGS += -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla -flto
 MPIFLAGS = `mpicc --showme:compile` `mpicc --showme:link`
 PROG = recomender
 OMPFLAGS = -fopenmp -Werror=unknown-pragmas
+LFLAGS = -lm
 CC = mpicc
 
 all: debug _rename
@@ -57,17 +58,17 @@ debug: debug_serial debug_openmp debug_mpi
 
 debug_serial: __debug_dir $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL)
 	@echo -e "\e[34mLinking $@\e[32m"
-	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL) $(DFLAGS) -o $(DEBUG_DIR_SERIAL)/$(PROG)
+	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL) $(DFLAGS) -o $(DEBUG_DIR_SERIAL)/$(PROG) $(LFLAGS)
 	@echo -en "\e[0m"
 
 debug_openmp: __debug_dir $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP)
 	@echo -e "\e[34mLinking $@\e[32m"
-	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP) $(DFLAGS) -o $(DEBUG_DIR_OPENMP)/$(PROG) $(OMPFLAGS)
+	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP) $(DFLAGS) -o $(DEBUG_DIR_OPENMP)/$(PROG) $(OMPFLAGS) $(LFLAGS)
 	@echo -en "\e[0m"
 
 debug_mpi: __debug_dir $(OBJ_DEBUG_COMMON_MPI) $(OBJ_DEBUG_MPI)
 	@echo -e "\e[34mLinking $@\e[32m"
-	$(CC) $(CFLAGS) -I$(HEADERS) -rdynamic $(OBJ_DEBUG_COMMON_MPI) $(OBJ_DEBUG_MPI) $(DFLAGS) -o $(DEBUG_DIR_MPI)/$(PROG) -DMPI
+	$(CC) $(CFLAGS) -I$(HEADERS) -rdynamic $(OBJ_DEBUG_COMMON_MPI) $(OBJ_DEBUG_MPI) $(DFLAGS) -o $(DEBUG_DIR_MPI)/$(PROG) -DMPI $(LFLAGS)
 	@echo -en "\e[0m"
 
 release: release_serial release_openmp release_mpi

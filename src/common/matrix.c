@@ -110,6 +110,20 @@ void random_fill_LT_R(Matrix* const l, Matrix* const r) {
     }
 }
 
+void random_fill_L_RT(Matrix* const l, Matrix* const r) {
+    srandom(0);
+
+    for (MatrixIterMut i = matrix_iter_full_mut(l); i.iter != i.end; ++i.iter) {
+        *i.iter = RAND01 / (double) r->rows;
+    }
+
+    for (size_t i = 0; i < r->columns; ++i) {
+        for (size_t j = 0; j < r->rows; ++j) {
+            *MATRIX_AT_MUT(r, j, i) = RAND01 / (double) r->rows;
+        }
+    }
+}
+
 void random_fill_LR(Matrix* const l, Matrix* const r) {
     srandom(0);
 
