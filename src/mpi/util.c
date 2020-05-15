@@ -2,16 +2,27 @@
 
 #include "common/debug.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 
-int NPROCS;
-int ME;
-int CHECKER_BOARD_SIDE;
+unsigned NPROCS;
+unsigned ME;
+unsigned CHECKER_BOARD_SIDE;
 
 void swap(Matrix* const a, Matrix* const b) {
     Matrix tmp = *a;
     *a = *b;
     *b = tmp;
+}
+
+void vswap(VMatrix* const a, VMatrix* const b) {
+    VMatrix tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+bool should_work_alone(size_t const rows, size_t const columns) {
+    return CHECKER_BOARD_SIDE > rows || CHECKER_BOARD_SIDE > columns;
 }
 
 // [x,x,x,x,x,x,x,x,x,x] num_iters = 10
@@ -46,4 +57,23 @@ Slice slice_rows(int const proc_id, int const nprocs, size_t const n_rows) {
 size_t slice_len(int const proc_id, int const nprocs, size_t const n_rows) {
     return start_chunk(proc_id + 1, nprocs, n_rows) -
            start_chunk(proc_id, nprocs, n_rows);
+}
+
+ABounds a_bounds(int const zone, size_t const rows, size_t const columns) {
+    int x = zone / CHECKER_BOARD_SIDE;
+    int y = zone % CHECKER_BOARD_SIDE;
+    Slice i_bounds = slice_rows(x, CHECKER_BOARD_SIDE, rows);
+    Slice j_bounds = slice_rows(y, CHECKER_BOARD_SIDE, columns);
+    return (ABounds){.i = i_bounds, .j = j_bounds};
+}
+
+int proc_from_row_column(
+    size_t const row,
+    size_t const column,
+    size_t const rows,
+    size_t const columns) {
+
+    int x = proc_from_chunk(row, CHECKER_BOARD_SIDE, rows);
+    int y = proc_from_chunk(column, CHECKER_BOARD_SIDE, columns);
+    return x * CHECKER_BOARD_SIDE + y;
 }

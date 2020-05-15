@@ -37,7 +37,7 @@ static bool print_trace() {
     int child_pid = fork();
     if (!child_pid) {
         eprintln("Stack trace for %s pid=%s", name_buf, pid_buf);
-        dup2(2, 1); // redirect output to stderr
+        dup2(2, 1);
         execlp(
             "gdb",
             "gdb",
@@ -46,7 +46,7 @@ static bool print_trace() {
             "-ex",
             "thread",
             "-ex",
-            "bt full",
+            getenv("BT_FULL") ? "bt full" : "bt",
             name_buf,
             pid_buf,
             NULL);

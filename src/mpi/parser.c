@@ -50,33 +50,47 @@ ParserError parse_file_lt(char const* const filename, Matrices* matrices) {
     return PARSER_ERROR_OK;
 }
 
-/* typedef struct { */
-/*     Slice i; */
-/*     Slice j; */
-/* } ABounds; */
+void transpose_items(Item* dest, Item const* src, size_t n) {
+    Item const* const end = src + n;
+    while (src != end) {
+        dest->row = src->column;
+        dest->column = src->row;
+        dest->value = src->value;
+        ++src;
+        ++dest;
+    }
+}
 
-/* static inline ABounds */
-/* a_bounds(int const zone, size_t const rows, size_t const columns) { */
-/*     int x = zone / CHECKER_BOARD_SIDE; */
-/*     int y = zone % CHECKER_BOARD_SIDE; */
-/*     Slice i_bounds = slice_rows(x, CHECKER_BOARD_SIDE, rows); */
-/*     Slice j_bounds = slice_rows(y, CHECKER_BOARD_SIDE, columns); */
-/*     return (ABounds){.i = i_bounds, .j = j_bounds}; */
-/* } */
-
-static inline int proc_from_row_column(
-    size_t const row,
-    size_t const column,
-    size_t const rows,
-    size_t const columns) {
-
-    int x = proc_from_chunk(row, CHECKER_BOARD_SIDE, rows);
-    int y = proc_from_chunk(column, CHECKER_BOARD_SIDE, columns);
-    return x * CHECKER_BOARD_SIDE + y;
+static inline void
+broadcast_header(Header* const header, MPI_Request* const request) {
+    MPI_Datatype mpi_header_t;
+    int blocklengths[] = {1, 1, 1, 1, 1, 1};
+    MPI_Datatype types[] = {
+        MPI_SIZE_T, MPI_SIZE_T, MPI_SIZE_T, MPI_SIZE_T, MPI_DOUBLE, MPI_SIZE_T};
+    MPI_Aint offsets[] = {
+        offsetof(Header, features),
+        offsetof(Header, users),
+        offsetof(Header, items),
+        offsetof(Header, non_zero_elems),
+        offsetof(Header, alpha),
+        offsetof(Header, num_iterations)};
+    enum { NUM_ITEMS = 6 };
+    static_assert(
+        sizeof(offsets) / sizeof(MPI_Aint) == NUM_ITEMS &&
+            sizeof(blocklengths) / sizeof(int) == NUM_ITEMS &&
+            sizeof(types) / sizeof(MPI_Datatype) == NUM_ITEMS,
+        "Header MPI type member number inconsistent");
+    MPI_Type_create_struct(
+        NUM_ITEMS, blocklengths, offsets, types, &mpi_header_t);
+    MPI_Type_commit(&mpi_header_t);
+    MPI_Ibcast(header, 1, mpi_header_t, ROOT, MPI_COMM_WORLD, request);
 }
 
 ParserError spit_parse_a(
-    StrIter* const iter, size_t const non_zero_elems, CompactMatrix* const a) {
+    StrIter* const iter,
+    size_t const non_zero_elems,
+    CompactMatrix* const a,
+    CompactMatrix* const at) {
 
     size_t row, column;
     double value;
@@ -127,6 +141,8 @@ ParserError spit_parse_a(
                     a->items + a->current_items,
                     item_buffer,
                     num_items * sizeof(Item));
+                transpose_items(
+                    at->items + a->current_items, item_buffer, num_items);
                 a->current_items += num_items;
             } else {
                 mpi_send_size(num_items, current_proc);
@@ -141,25 +157,30 @@ ParserError spit_parse_a(
         ++item_buffer_iter;
         //= (Item){.row = row, .column = column, .value = value};
     }
-    int new_proc = proc_from_row_column(row, column, a->n_rows, a->n_cols);
-    if (new_proc != current_proc) {
-        size_t num_items = item_buffer_iter - item_buffer;
-        if (current_proc == ROOT) {
-            memcpy(
-                a->items + a->current_items,
-                item_buffer,
-                num_items * sizeof(Item));
-            a->current_items += num_items;
-        } else {
-            mpi_send_size(num_items, current_proc);
-            mpi_send_items(item_buffer, num_items, current_proc);
-        }
+    size_t num_items = item_buffer_iter - item_buffer;
+    if (current_proc == ROOT) {
+        memcpy(
+            a->items + a->current_items, item_buffer, num_items * sizeof(Item));
+        transpose_items(at->items + a->current_items, item_buffer, num_items);
+        a->current_items += num_items;
+    } else {
+        mpi_send_size(num_items, current_proc);
+        mpi_send_items(item_buffer, num_items, current_proc);
     }
-    for (int proc = 1; proc < NPROCS; ++proc) {
+    free(item_buffer);
+    for (unsigned proc = 1; proc < NPROCS; ++proc) {
         mpi_send_size(SIZE_MAX, proc);
     }
-
-    free(item_buffer);
+    at->current_items = at->_total_items = a->_total_items = a->current_items;
+    if (a->current_items == 0) {
+        free(a->items);
+        free(at->items);
+        a->items = at->items = NULL;
+    } else {
+        a->items = realloc(a->items, a->current_items * sizeof(Item));
+        at->items = realloc(at->items, at->current_items * sizeof(Item));
+    }
+    cmatrix_sort(at);
 
     if (n_lines < non_zero_elems) {
         fputs("Not as many elements as expected\n", stderr);
@@ -169,32 +190,25 @@ ParserError spit_parse_a(
     return PARSER_ERROR_OK;
 }
 
-static inline void
-broadcast_header(Header* const header, MPI_Request* const request) {
-    MPI_Datatype mpi_header_t;
-    int blocklengths[] = {1, 1, 1, 1, 1, 1};
-    MPI_Datatype types[] = {
-        MPI_SIZE_T, MPI_SIZE_T, MPI_SIZE_T, MPI_SIZE_T, MPI_DOUBLE, MPI_SIZE_T};
-    MPI_Aint offsets[] = {
-        offsetof(Header, features),
-        offsetof(Header, users),
-        offsetof(Header, items),
-        offsetof(Header, non_zero_elems),
-        offsetof(Header, alpha),
-        offsetof(Header, num_iterations)};
-    enum { NUM_ITEMS = 6 };
-    static_assert(
-        sizeof(offsets) / sizeof(MPI_Aint) == NUM_ITEMS &&
-            sizeof(blocklengths) / sizeof(int) == NUM_ITEMS &&
-            sizeof(types) / sizeof(MPI_Datatype) == NUM_ITEMS,
-        "Header MPI type member number inconsistent");
-    MPI_Type_create_struct(
-        NUM_ITEMS, blocklengths, offsets, types, &mpi_header_t);
-    MPI_Type_commit(&mpi_header_t);
-    MPI_Ibcast(header, 1, mpi_header_t, ROOT, MPI_COMM_WORLD, request);
+void print_header(Header const* const header) {
+    eprintln(
+        "Header {"
+        " users(i): %zu,"
+        " items(j): %zu,"
+        " features(k): %zu,"
+        " non_zero_elems: %zu,"
+        " alpha: %f,"
+        " num_iterations: %zu"
+        " }",
+        header->users,
+        header->items,
+        header->features,
+        header->non_zero_elems,
+        header->alpha,
+        header->num_iterations);
 }
 
-ParserError parse_file_rt(char const* const filename, Matrices* matrices) {
+ParserError parse_file_rt(char const* const filename, VMatrices* matrices) {
     char* contents = read_file(filename);
     if (contents == NULL)
         return PARSER_ERROR_IO;
@@ -212,54 +226,78 @@ ParserError parse_file_rt(char const* const filename, Matrices* matrices) {
     CompactMatrix a =
         cmatrix_make(header.users, header.items, header.non_zero_elems);
 
-    error = spit_parse_a(&content_iter, header.non_zero_elems, &a);
+    CompactMatrix at =
+        cmatrix_make(header.items, header.users, header.non_zero_elems);
+
+    if (should_work_alone(header.items, header.users)) {
+        error = parse_matrix_a(&content_iter, header.non_zero_elems, &a, &at);
+    } else {
+        error = spit_parse_a(&content_iter, header.non_zero_elems, &a, &at);
+    }
     free(contents);
     if (error != PARSER_ERROR_OK) {
         cmatrix_free(&a);
+        cmatrix_free(&at);
         MPI_Wait(&request, NULL);
         return error;
     }
-    *matrices = (Matrices){
+    ABounds abounds = a_bounds(0, a.n_rows, a.n_cols);
+    *matrices = (VMatrices){
         .num_iterations = header.num_iterations,
         .alpha = header.alpha,
-        .l = {.data = NULL, .rows = header.users, .columns = header.features},
-        .r = {.data = NULL, .rows = header.items, .columns = header.features},
+        .l = should_work_alone(header.items, header.users)
+                 ? vmatrix_make(0, header.users, 0, header.features)
+                 : vmatrix_make(
+                       abounds.i.start, abounds.i.end, 0, header.features),
+        .r = should_work_alone(header.items, header.users)
+                 ? vmatrix_make(0, header.features, 0, header.items)
+                 : vmatrix_make(
+                       0, header.features, abounds.j.start, abounds.j.end),
         .a = a,
-        .a_transpose = {0},
+        .a_transpose = at,
     };
     MPI_Wait(&request, NULL);
     return PARSER_ERROR_OK;
 }
 
-void recv_parsed_file(Matrices* matrices) {
+void recv_parsed_file(VMatrices* matrices) {
     Header header;
     MPI_Request request;
     broadcast_header(&header, &request);
     MPI_Wait(&request, NULL);
+    if(should_work_alone(header.items, header.users)) return;
 
     CompactMatrix a =
         cmatrix_make(header.users, header.items, header.non_zero_elems);
+    CompactMatrix at =
+        cmatrix_make(header.items, header.users, header.non_zero_elems);
 
     size_t read_so_far = 0;
     size_t line_size;
     while ((line_size = mpi_recv_size(ROOT)) != SIZE_MAX) {
         mpi_recv_items(a.items + read_so_far, line_size, ROOT);
+        transpose_items(
+            at.items + read_so_far, a.items + read_so_far, line_size);
         read_so_far += line_size;
     }
     if (read_so_far == 0) {
         free(a.items);
-        a.items = NULL;
+        free(at.items);
+        a.items = at.items = NULL;
     } else {
         a.items = realloc(a.items, sizeof(Item) * read_so_far);
+        at.items = realloc(at.items, sizeof(Item) * read_so_far);
     }
-    a.current_items = a._total_items = read_so_far;
-
-    *matrices = (Matrices){
+    at.current_items = at._total_items = a.current_items = a._total_items =
+        read_so_far;
+    cmatrix_sort(&at);
+    ABounds abounds = a_bounds(ME, a.n_rows, a.n_cols);
+    *matrices = (VMatrices){
         .num_iterations = header.num_iterations,
         .alpha = header.alpha,
-        .l = {.data = NULL, .rows = header.users, .columns = header.features},
-        .r = {.data = NULL, .rows = header.items, .columns = header.features},
+        .l = vmatrix_make(abounds.i.start, abounds.i.end, 0, header.features),
+        .r = vmatrix_make(0, header.features, abounds.j.start, abounds.j.end),
         .a = a,
-        .a_transpose = {0},
+        .a_transpose = at,
     };
 }

@@ -11,7 +11,7 @@
 #    include <stdio.h>
 #endif
 
-typedef struct Matrix {
+typedef struct {
     size_t rows;
     size_t columns;
     double* data;
@@ -31,6 +31,7 @@ Matrix matrix_clone(Matrix const* other);
 #    define MATRIX_AT_MUT(m, row, column) (matrix_at_mut((m), (row), (column)))
 
 double const* matrix_at(Matrix const* a, size_t row, size_t column);
+
 double* matrix_at_mut(Matrix* a, size_t row, size_t column);
 #endif
 
@@ -64,9 +65,42 @@ void random_fill_L_RT(Matrix* const l, Matrix* const r);
 
 void random_fill_LR(Matrix* l, Matrix* r);
 
-void matrix_clear(Matrix* m);
+typedef struct {
+    Matrix m;
+    size_t row_offset;
+    size_t column_offset;
+} VMatrix;
 
-typedef struct Matrices {
+VMatrix vmatrix_make(
+    size_t start_row, size_t end_row, size_t start_column, size_t end_column);
+
+VMatrix vmatrix_clone(VMatrix const* other);
+
+#ifdef NO_ASSERT
+#    define VMATRIX_AT(m, row, column) \
+        (MATRIX_AT(                    \
+            (&(m)->m), (row) - (m)->row_offset, column - (m)->column_offset))
+#    define VMATRIX_AT_MUT(m, row, column) \
+        (MATRIX_AT_MUT(                    \
+            (&(m)->m), (row) - (m)->row_offset, column - (m)->column_offset))
+#else
+#    define VMATRIX_AT(m, row, column) (vmatrix_at((m), (row), (column)))
+#    define VMATRIX_AT_MUT(m, row, column) \
+        (vmatrix_at_mut((m), (row), (column)))
+
+double const* vmatrix_at(VMatrix const* a, size_t row, size_t column);
+
+double* vmatrix_at_mut(VMatrix* a, size_t row, size_t column);
+#endif
+
+void vmatrix_print(VMatrix const* m, size_t rows, size_t columns);
+
+void vmatrix_print_with_name(
+    VMatrix const* m, char const* name, size_t rows, size_t columns);
+
+void vmatrix_free(VMatrix* m);
+
+typedef struct {
     size_t num_iterations;
     double alpha;
     CompactMatrix a;
@@ -75,8 +109,19 @@ typedef struct Matrices {
     Matrix r;
 } Matrices;
 
+typedef struct {
+    size_t num_iterations;
+    double alpha;
+    CompactMatrix a;
+    CompactMatrix a_transpose;
+    VMatrix l;
+    VMatrix r;
+} VMatrices;
+
 void matrices_free(Matrices* m);
 
-void print_output(Matrices const* const matrices, Matrix const* const b);
+void vmatrices_free(VMatrices* m);
+
+void print_output(CompactMatrix const* const matrices, Matrix const* const b);
 
 #endif // MATRIX_H

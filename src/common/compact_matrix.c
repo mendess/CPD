@@ -86,33 +86,33 @@ static int item_compare(void const* a, void const* b) {
 
 void cmatrix_sort(CompactMatrix* m) {
     qsort(m->items, m->current_items, sizeof(Item), item_compare);
-#ifdef MPI
-    m->row_pos[0] = 0;
-    for (size_t i = 0; i < m->current_items; ++i) {
-        size_t row = m->items[i].row;
-        if (i > 0 && m->items[i].row != m->items[i - 1].row) {
-            m->row_pos[row] = i;
-            if (row > 1 && m->row_pos[row - 1] == 0) {
-                row = row - 1;
-                while (m->row_lengths[row] == 0) {
-                    if (m->row_pos[row] == 0) {
-                        m->row_pos[row] = i;
-                    } else {
-                        break;
-                    }
-                    row--;
-                }
-            }
-        }
-    }
-    m->row_pos[m->n_rows] = m->current_items;
-#    ifndef NO_ASSERT
-    for (size_t const* i = m->row_pos + 1; i != m->row_pos + m->n_rows; ++i) {
-        assert(m->items[*i].row != m->items[*(i - 1)].row);
-    }
-    assert(m->items + m->row_pos[m->n_rows] == m->items + m->current_items);
-#    endif // NO_ASSERT
-#endif     // MPI
+/* #ifdef MPI */
+/*     m->row_pos[0] = 0; */
+/*     for (size_t i = 0; i < m->current_items; ++i) { */
+/*         size_t row = m->items[i].row; */
+/*         if (i > 0 && m->items[i].row != m->items[i - 1].row) { */
+/*             m->row_pos[row] = i; */
+/*             if (row > 1 && m->row_pos[row - 1] == 0) { */
+/*                 row = row - 1; */
+/*                 while (m->row_lengths[row] == 0) { */
+/*                     if (m->row_pos[row] == 0) { */
+/*                         m->row_pos[row] = i; */
+/*                     } else { */
+/*                         break; */
+/*                     } */
+/*                     row--; */
+/*                 } */
+/*             } */
+/*         } */
+/*     } */
+/*     m->row_pos[m->n_rows] = m->current_items; */
+/* #    ifndef NO_ASSERT */
+/*     for (size_t const* i = m->row_pos + 1; i != m->row_pos + m->n_rows; ++i) { */
+/*         assert(m->items[*i].row != m->items[*(i - 1)].row); */
+/*     } */
+/*     assert(m->items + m->row_pos[m->n_rows] == m->items + m->current_items); */
+/* #    endif // NO_ASSERT */
+/* #endif     // MPI */
 }
 
 void cmatrix_free(CompactMatrix* m) {

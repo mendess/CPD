@@ -136,8 +136,104 @@ void random_fill_LR(Matrix* const l, Matrix* const r) {
     }
 }
 
-void matrix_clear(Matrix* m) {
-    memset(m->data, 0, m->rows * m->columns * sizeof(double));
+VMatrix vmatrix_make(
+    size_t const start_row,
+    size_t const end_row,
+    size_t const start_column,
+    size_t const end_column) {
+
+    return (VMatrix){
+        .m = matrix_make(end_row - start_row, end_column - start_column),
+        .row_offset = start_row,
+        .column_offset = start_column};
+}
+
+VMatrix vmatrix_clone(VMatrix const* const m) {
+    return (VMatrix){
+        .m = matrix_clone(&m->m),
+        .row_offset = m->row_offset,
+        .column_offset = m->column_offset};
+}
+
+#define MAX(a, b) (a > b ? a : b)
+#define MIN(a, b) (a < b ? a : b)
+
+noreturn static void bellow_bounds(
+    size_t const row, size_t row_offset, size_t column, size_t column_offset) {
+
+    size_t r = MAX(row_offset, row) - MIN(row_offset, row);
+    size_t c = MAX(column_offset, column) - MIN(column_offset, column);
+    eprintln(
+        "Give the offsets (%zu, %zu) and the indices (%zu, %zu),"
+        " indexing was at (%s%zu, %s%zu)",
+        row_offset,
+        column_offset,
+        row,
+        column,
+        row < row_offset ? "-" : "",
+        r,
+        column < column_offset ? "-" : "",
+        c);
+    debug_print_backtrace("indexing bellow bounds");
+}
+
+double const* vmatrix_at(VMatrix const* m, size_t row, size_t column) {
+    if (row < m->row_offset || column < m->column_offset) {
+        bellow_bounds(row, m->row_offset, column, m->column_offset);
+    }
+    return matrix_at(&m->m, row - m->row_offset, column - m->column_offset);
+}
+
+double* vmatrix_at_mut(VMatrix* m, size_t row, size_t column) {
+    if (row < m->row_offset || column < m->column_offset) {
+        bellow_bounds(row, m->row_offset, column, m->column_offset);
+    }
+    return matrix_at_mut(&m->m, row - m->row_offset, column - m->column_offset);
+}
+
+void vmatrix_print_with_name(
+    VMatrix const* const m,
+    char const* const name,
+    size_t rows,
+    size_t columns) {
+    eprintf("%s =\n", name);
+    size_t r = 0;
+    rows = MAX(rows, m->m.rows);
+    columns = MAX(columns, m->m.columns);
+    for (; r < m->row_offset; r++) {
+        for (size_t c = 0; c < columns; c++) {
+            fprintf(stderr, "\033[2mx.xxxxxx\033[0m ");
+        }
+        fputc('\n', stderr);
+    }
+    for (; r < m->row_offset + m->m.rows; r++) {
+        size_t c = 0;
+        for (; c < m->column_offset; c++) {
+            fprintf(stderr, "\033[2mx.xxxxxx\033[0m ");
+        }
+        for (; c < m->column_offset + m->m.columns; ++c) {
+            fprintf(stderr, "%.6lf ", *VMATRIX_AT(m, r, c));
+        }
+        for (; c < columns; c++) {
+            fprintf(stderr, "\033[2mx.xxxxxx\033[0m ");
+        }
+        fputc('\n', stderr);
+    }
+    for (; r < rows; ++r) {
+        for (size_t c = 0; c < columns; c++) {
+            fprintf(stderr, "\033[2mx.xxxxxx\033[0m ");
+        }
+        fputc('\n', stderr);
+    }
+}
+
+void vmatrix_print(
+    VMatrix const* const m, size_t const rows, size_t const columns) {
+    vmatrix_print_with_name(m, "VMatrix", rows, columns);
+}
+
+void vmatrix_free(VMatrix* m) {
+    matrix_free(&m->m);
 }
 
 void matrices_free(Matrices* m) {
@@ -147,13 +243,20 @@ void matrices_free(Matrices* m) {
     matrix_free(&m->r);
 }
 
-void print_output(Matrices const* const matrices, Matrix const* const b) {
-    Item const* iter = matrices->a.items;
-    Item const* const end = iter + matrices->a.current_items;
-    for (size_t row = 0; row < matrices->a.n_rows; row++) {
+void vmatrices_free(VMatrices* m) {
+    cmatrix_free(&m->a);
+    cmatrix_free(&m->a_transpose);
+    vmatrix_free(&m->l);
+    vmatrix_free(&m->r);
+}
+
+void print_output(CompactMatrix const* const a, Matrix const* const b) {
+    Item const* iter = a->items;
+    Item const* const end = iter + a->current_items;
+    for (size_t row = 0; row < a->n_rows; row++) {
         double max = 0;
         size_t max_pos = 0;
-        for (size_t column = 0; column < matrices->a.n_cols; column++) {
+        for (size_t column = 0; column < a->n_cols; column++) {
             if (iter != end && iter->row == row && iter->column == column) {
                 ++iter;
             } else {
