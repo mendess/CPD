@@ -155,6 +155,19 @@ VMatrix vmatrix_clone(VMatrix const* const m) {
         .column_offset = m->column_offset};
 }
 
+void vmatrix_change_offsets(
+    VMatrix* const m,
+    size_t const start_row,
+    size_t const end_row,
+    size_t const start_column,
+    size_t const end_column) {
+
+    assert(end_row - start_row <= m->m.rows);
+    assert(end_column - start_column <= m->m.columns);
+    m->row_offset = start_row;
+    m->column_offset = start_column;
+}
+
 #define MAX(a, b) (a > b ? a : b)
 #define MIN(a, b) (a < b ? a : b)
 

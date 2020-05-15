@@ -76,6 +76,13 @@ VMatrix vmatrix_make(
 
 VMatrix vmatrix_clone(VMatrix const* other);
 
+void vmatrix_change_offsets(
+    VMatrix* m,
+    size_t start_row,
+    size_t end_row,
+    size_t start_column,
+    size_t end_column);
+
 #ifdef NO_ASSERT
 #    define VMATRIX_AT(m, row, column) \
         (MATRIX_AT(                    \
