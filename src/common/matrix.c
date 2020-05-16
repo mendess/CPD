@@ -29,6 +29,15 @@ Matrix matrix_clone(Matrix const* const other) {
     return new_m;
 }
 
+Matrix matrix_shallow_clone(Matrix const* const other) {
+    Matrix new_m = (Matrix){
+        .rows = other->rows,
+        .columns = other->columns,
+        .data = malloc(other->rows * other->columns * sizeof(double)),
+    };
+    return new_m;
+}
+
 noreturn static void
 out_of_bounds(size_t rows, size_t columns, size_t row, size_t column) {
     eprintln(
@@ -121,6 +130,16 @@ VMatrix vmatrix_make(
 VMatrix vmatrix_clone(VMatrix const* const m) {
     return (VMatrix){
         .m = matrix_clone(&m->m),
+#ifndef NO_ASSERT
+        ._total = m->m.rows * m->m.columns,
+#endif
+        .row_offset = m->row_offset,
+        .column_offset = m->column_offset};
+}
+
+VMatrix vmatrix_shallow_clone(VMatrix const* const m) {
+    return (VMatrix){
+        .m = matrix_shallow_clone(&m->m),
 #ifndef NO_ASSERT
         ._total = m->m.rows * m->m.columns,
 #endif

@@ -73,6 +73,8 @@ VMatrix vmatrix_make(
 
 VMatrix vmatrix_clone(VMatrix const* other);
 
+VMatrix vmatrix_shallow_clone(VMatrix const* m);
+
 void vmatrix_change_offsets(
     VMatrix* m,
     size_t start_row,

@@ -14,27 +14,6 @@
 
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
-// FIXME: Debuggin utils
-#define BARRIER                  \
-    MPI_Barrier(MPI_COMM_WORLD); \
-    MPI_Barrier(MPI_COMM_WORLD); \
-    MPI_Barrier(MPI_COMM_WORLD); \
-    MPI_Barrier(MPI_COMM_WORLD); \
-    MPI_Barrier(MPI_COMM_WORLD);
-
-#define ONE_BY_ONE_DO(expr)                     \
-    {                                           \
-        BARRIER;                                \
-        for (unsigned i = 0; i < NPROCS; ++i) { \
-            if (ME == i) {                      \
-                (expr);                         \
-            }                                   \
-            BARRIER                             \
-        }                                       \
-    }
-
-// FIXME: Delete them
-
 static MPI_Comm HORIZONTAL_COMM;
 static MPI_Comm VERTICAL_COMM;
 
@@ -87,14 +66,6 @@ static void next_iter_l(
     VMatrix* const aux_l,
     VMatrix const* const b,
     ABounds const* const bounds) {
-    {
-        double const* const aux_l_end =
-            aux_l->m.data + aux_l->m.rows * aux_l->m.columns;
-
-        for (double* delta = aux_l->m.data; delta != aux_l_end; ++delta) {
-            *delta = 0.0;
-        }
-    }
 
     Item const* iter = matrices->a.items;
     Item const* const end = iter + matrices->a.current_items;
@@ -108,7 +79,9 @@ static void next_iter_l(
             Item const* line_iter = iter;
             if (row_to_visit != row) {
                 for (; row_to_visit < row; ++row_to_visit) {
-                    *VMATRIX_AT_MUT(aux_l, row_to_visit, k) = 0.0;
+                    for (size_t k = 0; k < aux_l->m.columns; ++k) {
+                        *VMATRIX_AT_MUT(aux_l, row_to_visit, k) = 0.0;
+                    }
                 }
             }
             counter = 0;
@@ -156,15 +129,6 @@ static void next_iter_r(
     VMatrix* const aux_r,
     VMatrix const* const b,
     ABounds const* const bounds) {
-
-    {
-        double const* const aux_r_end =
-            aux_r->m.data + aux_r->m.rows * aux_r->m.columns;
-
-        for (double* delta = aux_r->m.data; delta != aux_r_end; ++delta) {
-            *delta = 0.0;
-        }
-    }
 
     size_t aux_cols = VMATRIX_COLS(aux_r);
     // calcular os deltas
@@ -224,8 +188,8 @@ Matrix iter_mpi(VMatrices* const matrices) {
     unsigned ver_color = CHECKER_BOARD_SIDE + (ME % CHECKER_BOARD_SIDE);
     MPI_Comm_split(MPI_COMM_WORLD, hor_color, ME, &HORIZONTAL_COMM);
     MPI_Comm_split(MPI_COMM_WORLD, ver_color, ME, &VERTICAL_COMM);
-    VMatrix aux_l = vmatrix_clone(&matrices->l);
-    VMatrix aux_r = vmatrix_clone(&matrices->r);
+    VMatrix aux_l = vmatrix_shallow_clone(&matrices->l);
+    VMatrix aux_r = vmatrix_shallow_clone(&matrices->r);
     ABounds bounding_box = a_bounds(ME, matrices->a.n_rows, matrices->a.n_cols);
     VMatrix b = vmatrix_make(
         bounding_box.i.start,

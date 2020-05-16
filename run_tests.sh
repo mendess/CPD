@@ -12,12 +12,12 @@ targets=(serial openmp mpi)
 modes=(release debug)
 # make release
 if [[ "$1" = bench* ]]; then
-    [[ "$2" != nocompile ]] && make DFLAGS+=-DNO_ASSERT
+    [[ "$2" != nocompile ]] && make
     [[ "$2" != nocompile ]] && make release
     instances=(instances large_instances)
     # instances=instances
 else
-    [[ "$2" != nocompile ]] && make DFLAGS+=-DNO_ASSERT
+    [[ "$2" != nocompile ]] && make
     [[ "$2" != nocompile ]] && make release
     instances=(instances)
 fi

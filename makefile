@@ -41,6 +41,7 @@ OBJ_RELEASE_OPENMP = $(foreach o, $(patsubst $(SOURCES_OPENMP_DIR)/%.c, %.o, $(S
 OBJ_RELEASE_MPI    = $(foreach o, $(patsubst $(SOURCES_MPI_DIR)/%.c, %.o, $(SOURCES_MPI)), $(RELEASE_DIR_MPI)/$o)
 
 ifndef DFLAGS
+	#DFLAGS = -O0 -DNDEBUG -DNO_ASSERT
 	DFLAGS = -O0 -g -DDEBUG
 endif
 RFLAGS = -O3 -march=native -DNDEBUG -DNO_ASSERT -flto
