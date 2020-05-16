@@ -8,7 +8,7 @@ join_by() {
 
 set -e
 binary="$(grep '^PROG = ' makefile | cut -d'=' -f2 | sed -r 's/ //g')"
-targets=(serial openmp mpi)
+targets=(mpi)
 modes=(release debug)
 # make release
 if [[ "$1" = bench* ]]; then
