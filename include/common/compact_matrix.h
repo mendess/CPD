@@ -27,9 +27,6 @@ cmatrix_make_without_lengths(size_t rows, size_t columns, size_t num_elems);
 
 void cmatrix_add(CompactMatrix* m, size_t row, size_t column, double value);
 
-void cmatrix_add_without_lengths(
-    CompactMatrix* m, size_t row, size_t column, double value);
-
 void cmatrix_sort(CompactMatrix* m);
 
 void cmatrix_print(CompactMatrix const* m);

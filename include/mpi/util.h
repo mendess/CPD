@@ -20,10 +20,6 @@ void vswap(VMatrix* a, VMatrix* b);
 
 bool should_work_alone(size_t rows, size_t columns);
 
-size_t start_chunk(int proc_id, int nprocs, size_t num_iters);
-
-int proc_from_chunk(size_t k, int nprocs, size_t num_iters);
-
 Slice slice_rows(int proc_id, int nprocs, size_t n_rows);
 
 size_t slice_len(int proc_id, int nprocs, size_t n_rows);

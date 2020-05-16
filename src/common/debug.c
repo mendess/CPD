@@ -10,6 +10,11 @@
 #include <stdnoreturn.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#ifdef MPI
+#    include <mpi.h>
+
+unsigned G_ME;
+#endif
 
 void gdb_attach_point(char const* const file, int line) {
     volatile int i = 0;
@@ -62,15 +67,20 @@ static bool print_trace() {
 }
 
 noreturn void debug_print_backtrace(char const* const msg) {
-    eprintf("Panicked at '%s'\n", msg);
+    eprintln("Panicked at '%s'", msg);
     if (!print_trace()) {
         void** func_addrs = malloc(sizeof(void*) * 30);
         int size = backtrace(func_addrs, 30);
-        char const* const* const bt =
-            (char const* const*) backtrace_symbols(func_addrs, size);
-        for (char const* const* i = bt + 1; i != bt + size; ++i) {
-            eprintf("%s\n", *i);
+        char** const bt = backtrace_symbols(func_addrs, size);
+        for (char* const* i = bt + 1; i != bt + size; ++i) {
+            eputln(*i);
+            free(*i);
         }
+        free(bt);
+        free(func_addrs);
     }
+#ifdef MPI
+    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+#endif
     abort();
 }

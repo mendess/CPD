@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void transpose_items(Item* dest, Item const* src, size_t n) {
+static inline void transpose_items(Item* dest, Item const* src, size_t n) {
     Item const* const end = src + n;
     while (src != end) {
         dest->row = src->column;
@@ -24,7 +24,7 @@ void transpose_items(Item* dest, Item const* src, size_t n) {
     }
 }
 
-static inline void
+static void
 broadcast_header(Header* const header, MPI_Request* const request) {
     MPI_Datatype mpi_header_t;
     int blocklengths[] = {1, 1, 1, 1, 1, 1};
@@ -49,7 +49,7 @@ broadcast_header(Header* const header, MPI_Request* const request) {
     MPI_Ibcast(header, 1, mpi_header_t, ROOT, MPI_COMM_WORLD, request);
 }
 
-ParserError spit_parse_a(
+static ParserError spit_parse_a(
     StrIter* const iter,
     size_t const non_zero_elems,
     CompactMatrix* const a,
@@ -162,23 +162,23 @@ ParserError spit_parse_a(
     return PARSER_ERROR_OK;
 }
 
-void print_header(Header const* const header) {
-    eprintln(
-        "Header {"
-        " users(i): %zu,"
-        " items(j): %zu,"
-        " features(k): %zu,"
-        " non_zero_elems: %zu,"
-        " alpha: %f,"
-        " num_iterations: %zu"
-        " }",
-        header->users,
-        header->items,
-        header->features,
-        header->non_zero_elems,
-        header->alpha,
-        header->num_iterations);
-}
+/* static inline void print_header(Header const* const header) { */
+/*     eprintln( */
+/*         "Header {" */
+/*         " users(i): %zu," */
+/*         " items(j): %zu," */
+/*         " features(k): %zu," */
+/*         " non_zero_elems: %zu," */
+/*         " alpha: %f," */
+/*         " num_iterations: %zu" */
+/*         " }", */
+/*         header->users, */
+/*         header->items, */
+/*         header->features, */
+/*         header->non_zero_elems, */
+/*         header->alpha, */
+/*         header->num_iterations); */
+/* } */
 
 ParserError parse_file_rt(char const* const filename, VMatrices* matrices) {
     char* contents = read_file(filename);
@@ -232,13 +232,13 @@ ParserError parse_file_rt(char const* const filename, VMatrices* matrices) {
     return PARSER_ERROR_OK;
 }
 
-void recv_parsed_file(VMatrices* matrices) {
+bool recv_parsed_file(VMatrices* matrices) {
     Header header = {0};
     MPI_Request request;
     broadcast_header(&header, &request);
     MPI_Wait(&request, NULL);
     if (should_work_alone(header.items, header.users))
-        return;
+        return false;
 
     CompactMatrix a =
         cmatrix_make(header.users, header.items, header.non_zero_elems);
@@ -273,4 +273,5 @@ void recv_parsed_file(VMatrices* matrices) {
         .a = a,
         .a_transpose = at,
     };
+    return true;
 }

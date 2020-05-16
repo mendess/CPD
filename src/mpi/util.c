@@ -30,21 +30,22 @@ bool should_work_alone(size_t const rows, size_t const columns) {
 // proc = 1, nprocs = 3 => 3
 // proc = 2, nprocs = 3 => 6
 // proc = 3, nprocs = 3 => 9
-size_t start_chunk(int const proc, int const nprocs, size_t const num_elems) {
+static inline size_t start_chunk(int const proc, int const nprocs, size_t const num_elems) {
     size_t const rem = (num_elems % nprocs);
     size_t const x = proc * (num_elems - rem) / nprocs;
     return x + ((unsigned) proc < rem ? (unsigned) proc : rem);
 }
 
-int proc_from_chunk(
+static int proc_from_chunk(
     size_t const index, int const nprocs, size_t const num_elems) {
+    // FIXME: Find a O(1) way to do this.
     for (int i = 0; i < nprocs; ++i) {
         Slice try_bound = slice_rows(i, nprocs, num_elems);
         if (try_bound.start <= index && index < try_bound.end) {
             return i;
         }
     }
-    eprintf("index = %zu\n", index);
+    eprintln("index = %zu", index);
     debug_print_backtrace("k out of range");
 }
 

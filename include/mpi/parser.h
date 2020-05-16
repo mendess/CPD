@@ -3,8 +3,10 @@
 #include "common/matrix.h"
 #include "common/parser.h"
 
+#include <stdbool.h>
+
 ParserError parse_file_rt(char const* filename, VMatrices* matrices);
 
-void recv_parsed_file(VMatrices* matrices);
+bool recv_parsed_file(VMatrices* matrices);
 
 #endif // MPI_PARSER_H

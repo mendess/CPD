@@ -31,8 +31,8 @@ Matrix matrix_clone(Matrix const* const other) {
 
 noreturn static void
 out_of_bounds(size_t rows, size_t columns, size_t row, size_t column) {
-    eprintf(
-        "Bounds were (%zu, %zu) but index is (%zu, %zu)\n",
+    eprintln(
+        "Bounds were (%zu, %zu) but index is (%zu, %zu)",
         rows,
         columns,
         row,
@@ -65,11 +65,6 @@ MatrixIter matrix_iter_row(Matrix const* const m, size_t const row) {
     };
 }
 
-MatrixIter matrix_iter_full(Matrix const* const m) {
-    return (MatrixIter){
-        .iter = m->data, .end = m->data + (m->rows * m->columns)};
-}
-
 MatrixIterMut matrix_iter_row_mut(Matrix* const m, size_t const row) {
     return (MatrixIterMut){
         .iter = m->data + (row * m->columns),
@@ -83,7 +78,7 @@ MatrixIterMut matrix_iter_full_mut(Matrix* const m) {
 }
 
 void matrix_print_with_name(Matrix const* const m, char const* const name) {
-    eprintf("%s =\n", name);
+    eprintln("%s =", name);
     for (size_t r = 0; r < m->rows; r++) {
         for (MatrixIter i = matrix_iter_row(m, r); i.iter != i.end; ++i.iter) {
             fprintf(stderr, "%.6lf ", *i.iter);
@@ -96,39 +91,11 @@ void matrix_print(Matrix const* const m) {
     matrix_print_with_name(m, "Matrix");
 }
 
-void random_fill_LT_R(Matrix* const l, Matrix* const r) {
-    srandom(0);
-
-    for (size_t i = 0; i < l->columns; ++i) {
-        for (size_t j = 0; j < l->rows; ++j) {
-            *MATRIX_AT_MUT(l, j, i) = RAND01 / (double) r->rows;
-        }
-    }
-
-    for (MatrixIterMut i = matrix_iter_full_mut(r); i.iter != i.end; ++i.iter) {
-        *i.iter = RAND01 / (double) r->rows;
-    }
-}
-
-void random_fill_L_RT(Matrix* const l, Matrix* const r) {
-    srandom(0);
-
-    for (MatrixIterMut i = matrix_iter_full_mut(l); i.iter != i.end; ++i.iter) {
-        *i.iter = RAND01 / (double) r->rows;
-    }
-
-    for (size_t i = 0; i < r->columns; ++i) {
-        for (size_t j = 0; j < r->rows; ++j) {
-            *MATRIX_AT_MUT(r, j, i) = RAND01 / (double) r->rows;
-        }
-    }
-}
-
 void random_fill_LR(Matrix* const l, Matrix* const r) {
     srandom(0);
 
     for (MatrixIterMut i = matrix_iter_full_mut(l); i.iter != i.end; ++i.iter) {
-        *i.iter = RAND01 / (double) r->rows; // Why is this division being done?
+        *i.iter = RAND01 / (double) r->rows;
     }
 
     for (MatrixIterMut i = matrix_iter_full_mut(r); i.iter != i.end; ++i.iter) {
@@ -144,6 +111,9 @@ VMatrix vmatrix_make(
 
     return (VMatrix){
         .m = matrix_make(end_row - start_row, end_column - start_column),
+#ifndef NO_ASSERT
+        ._total = (end_row - start_row) * (end_column - start_column),
+#endif
         .row_offset = start_row,
         .column_offset = start_column};
 }
@@ -151,6 +121,9 @@ VMatrix vmatrix_make(
 VMatrix vmatrix_clone(VMatrix const* const m) {
     return (VMatrix){
         .m = matrix_clone(&m->m),
+#ifndef NO_ASSERT
+        ._total = m->m.rows * m->m.columns,
+#endif
         .row_offset = m->row_offset,
         .column_offset = m->column_offset};
 }
@@ -162,6 +135,11 @@ void vmatrix_change_offsets(
     size_t const start_column,
     size_t const end_column) {
 
+#ifndef NO_ASSERT
+    assert(
+        (end_row - start_row) * (end_column - start_column) <= m->_total &&
+        "New offsets out of bounds");
+#endif
     m->m.rows = end_row - start_row;
     m->m.columns = end_column - start_column;
     m->row_offset = start_row;
@@ -204,20 +182,13 @@ double* vmatrix_at_mut(VMatrix* m, size_t row, size_t column) {
     return matrix_at_mut(&m->m, row - m->row_offset, column - m->column_offset);
 }
 
-size_t vmatrix_rows(VMatrix const* const m) {
-    return m->m.rows + m->row_offset;
-}
-
-size_t vmatrix_cols(VMatrix const* const m) {
-    return m->m.columns + m->column_offset;
-}
-
 void vmatrix_print_with_name(
     VMatrix const* const m,
     char const* const name,
     size_t rows,
     size_t columns) {
-    eprintf("%s =\n", name);
+
+    eprintln("%s =", name);
     size_t r = 0;
     rows = MAX(rows, m->m.rows);
     columns = MAX(columns, m->m.columns);
@@ -284,7 +255,8 @@ void print_output(CompactMatrix const* const a, Matrix const* const b) {
                 double aux = *MATRIX_AT(b, row, column);
                 /* if (aux != 0.0) */
                 /*     eprintln( */
-                /*         "(%zu, %zu): Tesing: %f < %f", row, column, aux, max); */
+                /*         "(%zu, %zu): Tesing: %f < %f", row, column, aux,
+                 * max); */
                 if (aux > max) {
                     max = aux;
                     max_pos = column;

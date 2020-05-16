@@ -10,16 +10,15 @@ set -e
 binary="$(grep '^PROG = ' makefile | cut -d'=' -f2 | sed -r 's/ //g')"
 targets=(serial openmp mpi)
 modes=(release debug)
-make clean
 # make release
 if [[ "$1" = bench* ]]; then
-    make DFLAGS+=-DNO_ASSERT
-    make release
+    [[ "$2" != nocompile ]] && make DFLAGS+=-DNO_ASSERT
+    [[ "$2" != nocompile ]] && make release
     instances=(instances large_instances)
     # instances=instances
 else
-    make DFLAGS+=-DNO_ASSERT
-    make release
+    [[ "$2" != nocompile ]] && make DFLAGS+=-DNO_ASSERT
+    [[ "$2" != nocompile ]] && make release
     instances=(instances)
 fi
 export OMP_NUM_THREADS=4

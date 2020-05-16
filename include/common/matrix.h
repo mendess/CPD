@@ -46,9 +46,7 @@ typedef struct MatrixIter {
     double const* const end;
 } MatrixIter;
 
-MatrixIter matrix_iter_row(Matrix const* m, size_t row);
-
-MatrixIter matrix_iter_full(Matrix const* m);
+MatrixIter matrix_iter_row(Matrix const* const m, size_t const row);
 
 typedef struct MatrixIterMut {
     double* iter;
@@ -57,11 +55,7 @@ typedef struct MatrixIterMut {
 
 MatrixIterMut matrix_iter_row_mut(Matrix* m, size_t row);
 
-MatrixIterMut matrix_iter_full_mut(Matrix* m);
-
-void random_fill_LT_R(Matrix* const l, Matrix* const r);
-
-void random_fill_L_RT(Matrix* const l, Matrix* const r);
+MatrixIterMut matrix_iter_full_mut(Matrix* const m);
 
 void random_fill_LR(Matrix* l, Matrix* r);
 
@@ -69,6 +63,9 @@ typedef struct {
     Matrix m;
     size_t row_offset;
     size_t column_offset;
+#ifndef NO_ASSERT
+    size_t _total;
+#endif
 } VMatrix;
 
 VMatrix vmatrix_make(
@@ -110,10 +107,6 @@ double* vmatrix_at_mut(VMatrix* a, size_t row, size_t column);
 
 #define VMATRIX_COLS(matrix) ((matrix)->m.columns + (matrix)->column_offset)
 
-size_t vmatrix_rows(VMatrix const* m);
-
-size_t vmatrix_cols(VMatrix const* m);
-
 void vmatrix_print(VMatrix const* m, size_t rows, size_t columns);
 
 void vmatrix_print_with_name(
@@ -130,6 +123,8 @@ typedef struct {
     Matrix r;
 } Matrices;
 
+void matrices_free(Matrices* m);
+
 typedef struct {
     size_t num_iterations;
     double alpha;
@@ -138,8 +133,6 @@ typedef struct {
     VMatrix l;
     VMatrix r;
 } VMatrices;
-
-void matrices_free(Matrices* m);
 
 void vmatrices_free(VMatrices* m);
 

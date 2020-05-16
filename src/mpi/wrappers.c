@@ -37,7 +37,6 @@ void mpi_recv_doubles(double* const buf, int const len, Node const from) {
 }
 
 void mpi_send_items(Item const* const items, int const len, Node const dest) {
-
     unsigned char* buf = (unsigned char*) items;
     int buf_len = len * (int) sizeof(Item);
     if (MPI_Send(buf, buf_len, MPI_UNSIGNED_CHAR, dest, 0, MPI_COMM_WORLD)) {
@@ -46,19 +45,10 @@ void mpi_send_items(Item const* const items, int const len, Node const dest) {
 }
 
 void mpi_recv_items(Item* const items, int const len, Node const source) {
-
     unsigned char* buf = (unsigned char*) items;
     int buf_len = len * (int) sizeof(Item);
     if (MPI_Recv(
             buf, buf_len, MPI_UNSIGNED_CHAR, source, 0, MPI_COMM_WORLD, NULL)) {
         debug_print_backtrace("couldn't receive items");
-    }
-}
-
-void cmatrix_bcast_items(Item* const items, int const len, Node const source) {
-    unsigned char* buf = (unsigned char*) items;
-    int buf_len = len * (int) sizeof(Item);
-    if (MPI_Bcast(buf, buf_len, MPI_UNSIGNED_CHAR, source, MPI_COMM_WORLD)) {
-        debug_print_backtrace("couldn't broadcast items");
     }
 }

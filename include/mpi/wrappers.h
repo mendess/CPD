@@ -25,16 +25,14 @@ typedef enum { ROOT = 0 } Node;
 
 void mpi_send_size(size_t size, Node dest);
 
-void mpi_send_doubles(double* buf, int len, Node dest);
-
 size_t mpi_recv_size(Node from);
+
+void mpi_send_doubles(double* buf, int len, Node dest);
 
 void mpi_recv_doubles(double* buf, int len, Node from);
 
 void mpi_send_items(Item const*, int len, Node dest);
 
 void mpi_recv_items(Item* items, int len, Node source);
-
-void cmatrix_bcast_items(Item* items, int len, Node source);
 
 #endif

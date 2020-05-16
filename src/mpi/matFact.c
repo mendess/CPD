@@ -12,14 +12,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef MPI
-#    define MPI
-#endif
-
-int G_ME;
-
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
+// FIXME: Debuggin utils
 #define BARRIER                  \
     MPI_Barrier(MPI_COMM_WORLD); \
     MPI_Barrier(MPI_COMM_WORLD); \
@@ -38,11 +33,13 @@ int G_ME;
         }                                       \
     }
 
+static size_t I;
+// FIXME: Delete them
+
 static MPI_Comm HORIZONTAL_COMM;
 static MPI_Comm VERTICAL_COMM;
-static size_t I;
 
-void matrix_b_full(
+static void matrix_b_full(
     VMatrix const* const l,
     VMatrix const* const r,
     VMatrix* const b,
@@ -59,9 +56,7 @@ void matrix_b_full(
                 ++iter;
             } else {
                 for (size_t k = 0; k < l->m.columns; ++k) {
-                    double const* lik = VMATRIX_AT(l, i, k);
-                    double const* rkj = VMATRIX_AT(r, k, j);
-                    bij += *lik * *rkj;
+                    bij += *VMATRIX_AT(l, i, k) * *VMATRIX_AT(r, k, j);
                 }
             }
             *VMATRIX_AT_MUT(b, i, j) = bij;
@@ -69,7 +64,7 @@ void matrix_b_full(
     }
 }
 
-void matrix_b(
+static void matrix_b(
     VMatrix const* const l,
     VMatrix const* const r,
     VMatrix* const b,
@@ -80,26 +75,15 @@ void matrix_b(
     while (iter != end) {
         double bij = 0;
         for (size_t k = 0; k < l->m.columns; ++k) {
-            double const* lik = VMATRIX_AT(l, iter->row, k);
-            double const* rkj = VMATRIX_AT(r, k, iter->column);
-            /* double old_b = bij; */
-            bij += *lik * *rkj;
-            /* eprintln( */
-            /*     "(%zu,%zu,%zu): %f = %f + (%f * %f)", */
-            /*     iter->row, */
-            /*     iter->column, */
-            /*     k, */
-            /*     bij, */
-            /*     old_b, */
-            /*     *lik, */
-            /*     *rkj); */
+            bij +=
+                *VMATRIX_AT(l, iter->row, k) * *VMATRIX_AT(r, k, iter->column);
         }
         *VMATRIX_AT_MUT(b, iter->row, iter->column) = bij;
         ++iter;
     }
 }
 
-void next_iter_l(
+static void next_iter_l(
     VMatrices const* const matrices,
     VMatrix* const aux_l,
     VMatrix const* const b) {
@@ -117,11 +101,6 @@ void next_iter_l(
             if (row - last_visited_row > 1) {
                 for (last_visited_row += 1; last_visited_row < row;
                      ++last_visited_row) {
-                    /* if (I == 0) */
-                    /*     eprintln( */
-                    /*         "Indexing (%zu, %zu) 0 values", */
-                    /*         last_visited_row, */
-                    /*         k); */
                     *VMATRIX_AT_MUT(aux_l, last_visited_row, k) = 0.0;
                 }
             }
@@ -135,11 +114,7 @@ void next_iter_l(
                 ++line_iter;
                 ++counter;
             }
-            /* if (I == 0) */
-            /*     eprintln("Indexing (%zu, %zu) %zu values", row, k, counter);
-             */
             *VMATRIX_AT_MUT(aux_l, row, k) = delta;
-            /**VMATRIX_AT(&matrices->l, row, k) */
         }
         last_visited_row = iter->row;
         iter += counter;
@@ -148,9 +123,6 @@ void next_iter_l(
     for (last_visited_row += 1; last_visited_row < aux_rows;
          ++last_visited_row) {
         for (size_t k = 0; k < aux_l->m.columns; ++k) {
-            /* if (I == 0) */
-            /*     eprintln("Indexing (%zu, %zu) 0 values", last_visited_row, */
-            /* k); */
             *VMATRIX_AT_MUT(aux_l, last_visited_row, k) = 0.0;
         }
     }
@@ -172,7 +144,7 @@ void next_iter_l(
     }
 }
 
-void next_iter_r(
+static void next_iter_r(
     VMatrices const* const matrices,
     VMatrix* const aux_r,
     VMatrix const* const b) {
@@ -183,18 +155,14 @@ void next_iter_r(
         Item const* const end = iter + matrices->a_transpose.current_items;
         size_t last_visited_column = iter->row;
         while (iter != end) {
-            double delta = 0;
+            double delta = 0.0;
             size_t const column = iter->row;
             if (column - last_visited_column > 1) {
                 for (last_visited_column += 1; last_visited_column < column;
                      ++last_visited_column) {
-                    /* eprintln( */
-                    /* "Indexing (%zu, %zu) 0 values", k, last_visited_column);
-                     */
                     *VMATRIX_AT_MUT(aux_r, k, last_visited_column) = 0.0;
                 }
             }
-            uint64_t counter = 0;
             while (iter != end && iter->row == column) {
                 size_t const row = iter->column;
                 delta += DELTA(
@@ -202,15 +170,12 @@ void next_iter_r(
                     *VMATRIX_AT(b, row, column),
                     *VMATRIX_AT(&matrices->l, row, k));
                 ++iter;
-                ++counter;
             }
-            // eprintln("Indexing (%zu, %zu) %zu values", k, column, counter);
             *VMATRIX_AT_MUT(aux_r, k, column) = delta;
             last_visited_column = column;
         }
         for (last_visited_column += 1; last_visited_column < aux_cols;
              ++last_visited_column) {
-            // eprintln("Indexing (%zu, %zu) 0 values", k, last_visited_column);
             *VMATRIX_AT_MUT(aux_r, k, last_visited_column) = 0.0;
         }
     }
@@ -247,32 +212,18 @@ Matrix iter_mpi(VMatrices* const matrices) {
         bounding_box.j.end);
     for (size_t i = 0; i < matrices->num_iterations; ++i) {
         I = i;
-        /* if (ME == 0) */
-        /*     eprintln("Progress %zu/%zu", i + 1, matrices->num_iterations); */
         matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
-        /* if (i == 0) */
-        /*     ONE_BY_ONE_DO(vmatrix_print_with_name( */
-        /*         &b, "B", matrices->a.n_rows, matrices->a.n_cols)) */
         next_iter_l(matrices, &aux_l, &b);
-        /* if (i == 0) { */
-        /*     ONE_BY_ONE_DO(vmatrix_print_with_name( */
-        /*         &matrices->l, "L", matrices->a.n_rows, 0)) */
-        /* } */
         next_iter_r(matrices, &aux_r, &b);
         vswap(&matrices->l, &aux_l);
         vswap(&matrices->r, &aux_r);
     }
     vmatrix_free(&aux_l);
     vmatrix_free(&aux_r);
-    /* ONE_BY_ONE_DO(vmatrix_print_with_name( */
-    /*     &b, "B", matrices->a.n_rows, matrices->a.n_cols)) */
     matrix_b_full(&matrices->l, &matrices->r, &b, &matrices->a);
     if (ME == 0) {
         Matrix final_b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
-        /* double const* const data = b.m.data; */
-        /* double const* const end = b.m.data + (b.m.rows * b.m.columns); */
         for (unsigned proc = 0; proc < NPROCS; ++proc) {
-            /* eprintln("Proc: %u", proc); */
             ABounds bounding_box =
                 a_bounds(proc, matrices->a.n_rows, matrices->a.n_cols);
             vmatrix_change_offsets(
@@ -281,29 +232,19 @@ Matrix iter_mpi(VMatrices* const matrices) {
                 bounding_box.i.end,
                 bounding_box.j.start,
                 bounding_box.j.end);
-            /* for (double const* i = data; i != end; ++i) { */
-            /*     fprintf(stderr, "%.6f ", *i); */
-            /* } */
-            /* fputc('\n', stderr); */
             if (proc != 0) {
                 size_t count = (bounding_box.i.end - bounding_box.i.start) *
                                (bounding_box.j.end - bounding_box.j.start);
                 mpi_recv_doubles(b.m.data, count, proc);
             }
-            /* for (double const* i = data; i != end; ++i) { */
-            /*     fprintf(stderr, "%.6f ", *i); */
-            /* } */
-            /* fputc('\n', stderr); */
             for (size_t i = bounding_box.i.start; i < bounding_box.i.end; ++i) {
                 for (size_t j = bounding_box.j.start; j < bounding_box.j.end;
                      ++j) {
                     double const* bij = VMATRIX_AT(&b, i, j);
-                    /* eprintln("Indexing (%zu, %zu): %f", i, j, *bij); */
                     *MATRIX_AT_MUT(&final_b, i, j) = *bij;
                 }
             }
         }
-        /* matrix_print_with_name(&final_b, "After"); */
         vmatrix_free(&b);
         return final_b;
     } else {

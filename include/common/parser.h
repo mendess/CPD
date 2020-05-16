@@ -23,17 +23,17 @@ typedef enum {
     PARSER_ERROR_INVALID_FORMAT,
 } ParserError;
 
-char* read_file(char const* filename);
-
-ParserError parse_header(StrIter* iter, Header* p);
-
 typedef enum {
     DOUBLE,
     SIZE_T,
 } FormatSpec;
 
+char* read_file(char const* filename);
+
 size_t scan_line(
     StrIter* const s_iter, size_t n_specs, FormatSpec const* format, ...);
+
+ParserError parse_header(StrIter* iter, Header* p);
 
 ParserError parse_matrix_a(
     StrIter* iter, size_t non_zero_elems, CompactMatrix* a, CompactMatrix* a2);
