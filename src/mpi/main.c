@@ -71,8 +71,6 @@ int main(int argc, char** argv) {
     if (should_work_alone(matrices.a.n_rows, matrices.a.n_cols)) {
         if (ME == 0) {
             random_fill_LR(&matrices.l.m, &matrices.r.m);
-            vmatrix_print_with_name(&matrices.l, "L", matrices.a.n_rows, 0);
-            vmatrix_print_with_name(&matrices.r, "R", 0, matrices.a.n_cols);
             NPROCS = 1;
             Matrix b = iter_mpi(&matrices);
             print_output(&matrices.a, &b);

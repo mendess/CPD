@@ -13,44 +13,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-ParserError parse_file_lt(char const* const filename, Matrices* matrices) {
-    char* contents = read_file(filename);
-    if (contents == NULL)
-        return PARSER_ERROR_IO;
-    StrIter content_iter = {.str = contents};
-
-    Header header;
-    ParserError error = parse_header(&content_iter, &header);
-    if (error != PARSER_ERROR_OK) {
-        free(contents);
-        return error;
-    }
-
-    CompactMatrix a = cmatrix_make_without_lengths(
-        header.users, header.items, header.non_zero_elems);
-    CompactMatrix a_transpose = cmatrix_make_without_lengths(
-        header.items, header.users, header.non_zero_elems);
-
-    error =
-        parse_matrix_a(&content_iter, header.non_zero_elems, &a, &a_transpose);
-    free(contents);
-    if (error != PARSER_ERROR_OK) {
-        cmatrix_free(&a);
-        cmatrix_free(&a_transpose);
-        return error;
-    }
-    cmatrix_sort(&a_transpose);
-    *matrices = (Matrices){
-        .num_iterations = header.num_iterations,
-        .alpha = header.alpha,
-        .l = {.data = NULL, .rows = header.features, .columns = header.users},
-        .r = {.data = NULL, .rows = header.features, .columns = header.items},
-        .a = a,
-        .a_transpose = a_transpose,
-    };
-    return PARSER_ERROR_OK;
-}
-
 void transpose_items(Item* dest, Item const* src, size_t n) {
     Item const* const end = src + n;
     while (src != end) {
@@ -99,7 +61,9 @@ ParserError spit_parse_a(
     Item* item_buffer = a->items;
     Item* item_buffer_iter = item_buffer;
     Item const* const item_buffer_end = item_buffer + a->_total_items;
+#ifndef NO_ASSERTS
     size_t out_of_bounds = 0;
+#endif
     int current_proc = 0;
     while (scan_line(
                iter,
@@ -133,6 +97,7 @@ ParserError spit_parse_a(
         }
         int new_proc = proc_from_row_column(row, column, a->n_rows, a->n_cols);
         if (new_proc != current_proc) {
+#ifndef NO_ASSERTS
             if (out_of_bounds > 0) {
                 eprintln(
                     "Out of bounds, can only hold %zu items bro",
@@ -140,7 +105,7 @@ ParserError spit_parse_a(
                 eprintln("Tried to hold %zu items too many", out_of_bounds);
                 debug_print_backtrace("Too Many Items");
             }
-            out_of_bounds = 0;
+#endif
             size_t num_items = item_buffer_iter - item_buffer;
             if (current_proc == ROOT) {
                 transpose_items(
@@ -154,14 +119,16 @@ ParserError spit_parse_a(
             }
             current_proc = new_proc;
         }
+#ifndef NO_ASSERTS
         if (item_buffer_iter == item_buffer_end) {
             ++out_of_bounds;
-        } else {
-            item_buffer_iter->row = row;
-            item_buffer_iter->column = column;
-            item_buffer_iter->value = value;
-            ++item_buffer_iter;
+            continue;
         }
+#endif
+        item_buffer_iter->row = row;
+        item_buffer_iter->column = column;
+        item_buffer_iter->value = value;
+        ++item_buffer_iter;
     }
     size_t num_items = item_buffer_iter - item_buffer;
     if (current_proc == ROOT) {

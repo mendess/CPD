@@ -139,17 +139,18 @@ void next_iter_l(
             /*     eprintln("Indexing (%zu, %zu) %zu values", row, k, counter);
              */
             *VMATRIX_AT_MUT(aux_l, row, k) = delta;
-                /**VMATRIX_AT(&matrices->l, row, k) */
+            /**VMATRIX_AT(&matrices->l, row, k) */
         }
         last_visited_row = iter->row;
         iter += counter;
     }
-    for (last_visited_row += 1; last_visited_row < VMATRIX_ROWS(aux_l);
+    size_t aux_rows = VMATRIX_ROWS(aux_l);
+    for (last_visited_row += 1; last_visited_row < aux_rows;
          ++last_visited_row) {
         for (size_t k = 0; k < aux_l->m.columns; ++k) {
             /* if (I == 0) */
-            /*     eprintln("Indexing (%zu, %zu) 0 values", last_visited_row,
-             * k); */
+            /*     eprintln("Indexing (%zu, %zu) 0 values", last_visited_row, */
+            /* k); */
             *VMATRIX_AT_MUT(aux_l, last_visited_row, k) = 0.0;
         }
     }
@@ -176,6 +177,7 @@ void next_iter_r(
     VMatrix* const aux_r,
     VMatrix const* const b) {
 
+    size_t aux_cols = VMATRIX_COLS(aux_r);
     for (size_t k = 0; k < matrices->r.m.rows; ++k) {
         Item const* iter = matrices->a_transpose.items;
         Item const* const end = iter + matrices->a_transpose.current_items;
@@ -206,8 +208,7 @@ void next_iter_r(
             *VMATRIX_AT_MUT(aux_r, k, column) = delta;
             last_visited_column = column;
         }
-        for (last_visited_column += 1;
-             last_visited_column < VMATRIX_COLS(aux_r);
+        for (last_visited_column += 1; last_visited_column < aux_cols;
              ++last_visited_column) {
             // eprintln("Indexing (%zu, %zu) 0 values", k, last_visited_column);
             *VMATRIX_AT_MUT(aux_r, k, last_visited_column) = 0.0;
