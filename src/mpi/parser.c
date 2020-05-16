@@ -9,9 +9,9 @@
 #include <assert.h>
 #include <math.h>
 #include <mpi.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 ParserError parse_file_lt(char const* const filename, Matrices* matrices) {
     char* contents = read_file(filename);
@@ -26,10 +26,10 @@ ParserError parse_file_lt(char const* const filename, Matrices* matrices) {
         return error;
     }
 
-    CompactMatrix a =
-        cmatrix_make(header.users, header.items, header.non_zero_elems);
-    CompactMatrix a_transpose =
-        cmatrix_make(header.items, header.users, header.non_zero_elems);
+    CompactMatrix a = cmatrix_make_without_lengths(
+        header.users, header.items, header.non_zero_elems);
+    CompactMatrix a_transpose = cmatrix_make_without_lengths(
+        header.items, header.users, header.non_zero_elems);
 
     error =
         parse_matrix_a(&content_iter, header.non_zero_elems, &a, &a_transpose);
@@ -96,10 +96,10 @@ ParserError spit_parse_a(
     size_t row, column;
     double value;
     size_t n_lines = 0;
-    size_t item_buffer_len =
-        a->n_rows + (CHECKER_BOARD_SIDE - 1) / CHECKER_BOARD_SIDE;
-    Item* item_buffer = malloc(sizeof(Item) * item_buffer_len);
+    Item* item_buffer = a->items;
     Item* item_buffer_iter = item_buffer;
+    Item const* const item_buffer_end = item_buffer + a->_total_items;
+    size_t out_of_bounds = 0;
     int current_proc = 0;
     while (scan_line(
                iter,
@@ -119,11 +119,9 @@ ParserError spit_parse_a(
                 a->n_cols,
                 row,
                 column);
-            free(item_buffer);
             return PARSER_ERROR_INVALID_FORMAT;
         } else if (n_lines > non_zero_elems) {
             fputs("More elements than expected\n", stderr);
-            free(item_buffer);
             return PARSER_ERROR_INVALID_FORMAT;
         } else if (0.0 > value || value > 5.0) {
             fprintf(
@@ -131,32 +129,39 @@ ParserError spit_parse_a(
                 "Invalid matrix value at line %zu: %lf\n",
                 n_lines,
                 value);
-            free(item_buffer);
             return PARSER_ERROR_INVALID_FORMAT;
         }
         int new_proc = proc_from_row_column(row, column, a->n_rows, a->n_cols);
         if (new_proc != current_proc) {
+            if (out_of_bounds > 0) {
+                eprintln(
+                    "Out of bounds, can only hold %zu items bro",
+                    a->_total_items);
+                eprintln("Tried to hold %zu items too many", out_of_bounds);
+                debug_print_backtrace("Too Many Items");
+            }
+            out_of_bounds = 0;
             size_t num_items = item_buffer_iter - item_buffer;
             if (current_proc == ROOT) {
-                memcpy(
-                    a->items + a->current_items,
-                    item_buffer,
-                    num_items * sizeof(Item));
                 transpose_items(
                     at->items + a->current_items, item_buffer, num_items);
                 a->current_items += num_items;
+                item_buffer = a->items + a->current_items;
             } else {
                 mpi_send_size(num_items, current_proc);
                 mpi_send_items(item_buffer, num_items, current_proc);
+                item_buffer_iter = item_buffer;
             }
-            item_buffer_iter = item_buffer;
             current_proc = new_proc;
         }
-        item_buffer_iter->row = row;
-        item_buffer_iter->column = column;
-        item_buffer_iter->value = value;
-        ++item_buffer_iter;
-        //= (Item){.row = row, .column = column, .value = value};
+        if (item_buffer_iter == item_buffer_end) {
+            ++out_of_bounds;
+        } else {
+            item_buffer_iter->row = row;
+            item_buffer_iter->column = column;
+            item_buffer_iter->value = value;
+            ++item_buffer_iter;
+        }
     }
     size_t num_items = item_buffer_iter - item_buffer;
     if (current_proc == ROOT) {
@@ -168,7 +173,6 @@ ParserError spit_parse_a(
         mpi_send_size(num_items, current_proc);
         mpi_send_items(item_buffer, num_items, current_proc);
     }
-    free(item_buffer);
     for (unsigned proc = 1; proc < NPROCS; ++proc) {
         mpi_send_size(SIZE_MAX, proc);
     }
@@ -215,7 +219,7 @@ ParserError parse_file_rt(char const* const filename, VMatrices* matrices) {
         return PARSER_ERROR_IO;
     StrIter content_iter = {.str = contents};
 
-    Header header;
+    Header header = {0};
     ParserError error = parse_header(&content_iter, &header);
     if (error != PARSER_ERROR_OK) {
         free(contents);
@@ -224,11 +228,11 @@ ParserError parse_file_rt(char const* const filename, VMatrices* matrices) {
     MPI_Request request;
     broadcast_header(&header, &request);
 
-    CompactMatrix a =
-        cmatrix_make(header.users, header.items, header.non_zero_elems);
+    CompactMatrix a = cmatrix_make_without_lengths(
+        header.users, header.items, header.non_zero_elems);
 
-    CompactMatrix at =
-        cmatrix_make(header.items, header.users, header.non_zero_elems);
+    CompactMatrix at = cmatrix_make_without_lengths(
+        header.items, header.users, header.non_zero_elems);
 
     if (should_work_alone(header.items, header.users)) {
         error = parse_matrix_a(&content_iter, header.non_zero_elems, &a, &at);
@@ -262,11 +266,12 @@ ParserError parse_file_rt(char const* const filename, VMatrices* matrices) {
 }
 
 void recv_parsed_file(VMatrices* matrices) {
-    Header header;
+    Header header = {0};
     MPI_Request request;
     broadcast_header(&header, &request);
     MPI_Wait(&request, NULL);
-    if(should_work_alone(header.items, header.users)) return;
+    if (should_work_alone(header.items, header.users))
+        return;
 
     CompactMatrix a =
         cmatrix_make(header.users, header.items, header.non_zero_elems);

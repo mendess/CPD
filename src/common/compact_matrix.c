@@ -13,40 +13,43 @@ cmatrix_make(size_t rows, size_t const columns, size_t const num_elems) {
         .items = malloc(sizeof(Item) * num_elems),
         .row_lengths = calloc(sizeof(size_t), rows),
         ._total_items = num_elems,
-        .row_pos = calloc(sizeof(size_t), (rows + 1)),
         .current_items = 0,
         .n_rows = rows,
         .n_cols = columns};
-    c.row_pos[0] = 0;
-    c.row_pos[c.n_rows] = num_elems;
+    return c;
+}
+
+CompactMatrix cmatrix_make_without_lengths(
+    size_t rows, size_t const columns, size_t const num_elems) {
+    CompactMatrix c = (CompactMatrix){
+        .items = malloc(sizeof(Item) * num_elems),
+        .row_lengths = NULL,
+        ._total_items = num_elems,
+        .current_items = 0,
+        .n_rows = rows,
+        .n_cols = columns};
     return c;
 }
 
 void cmatrix_add(
     CompactMatrix* const m,
-    size_t row,
+    size_t const row,
     size_t const column,
     double const value) {
     assert(m->current_items < m->_total_items);
     ++m->row_lengths[row];
-    m->items[m->current_items] =
+    m->items[m->current_items++] =
         (Item){.value = value, .row = row, .column = column};
-    if (m->current_items > 0 &&
-        m->items[m->current_items].row != m->items[m->current_items - 1].row) {
-        m->row_pos[row] = m->current_items;
-        if (row > 1 && m->row_pos[row - 1] == 0) {
-            row = row - 1;
-            while (m->row_lengths[row] == 0) {
-                if (m->row_pos[row] == 0) {
-                    m->row_pos[row] = m->current_items;
-                } else {
-                    break;
-                }
-                row--;
-            }
-        }
-    }
-    m->current_items++;
+}
+
+void cmatrix_add_without_lengths(
+    CompactMatrix* const m,
+    size_t const row,
+    size_t const column,
+    double const value) {
+    assert(m->current_items < m->_total_items);
+    m->items[m->current_items++] =
+        (Item){.value = value, .row = row, .column = column};
 }
 
 void cmatrix_print(CompactMatrix const* m) {
@@ -86,33 +89,6 @@ static int item_compare(void const* a, void const* b) {
 
 void cmatrix_sort(CompactMatrix* m) {
     qsort(m->items, m->current_items, sizeof(Item), item_compare);
-/* #ifdef MPI */
-/*     m->row_pos[0] = 0; */
-/*     for (size_t i = 0; i < m->current_items; ++i) { */
-/*         size_t row = m->items[i].row; */
-/*         if (i > 0 && m->items[i].row != m->items[i - 1].row) { */
-/*             m->row_pos[row] = i; */
-/*             if (row > 1 && m->row_pos[row - 1] == 0) { */
-/*                 row = row - 1; */
-/*                 while (m->row_lengths[row] == 0) { */
-/*                     if (m->row_pos[row] == 0) { */
-/*                         m->row_pos[row] = i; */
-/*                     } else { */
-/*                         break; */
-/*                     } */
-/*                     row--; */
-/*                 } */
-/*             } */
-/*         } */
-/*     } */
-/*     m->row_pos[m->n_rows] = m->current_items; */
-/* #    ifndef NO_ASSERT */
-/*     for (size_t const* i = m->row_pos + 1; i != m->row_pos + m->n_rows; ++i) { */
-/*         assert(m->items[*i].row != m->items[*(i - 1)].row); */
-/*     } */
-/*     assert(m->items + m->row_pos[m->n_rows] == m->items + m->current_items); */
-/* #    endif // NO_ASSERT */
-/* #endif     // MPI */
 }
 
 void cmatrix_free(CompactMatrix* m) {
