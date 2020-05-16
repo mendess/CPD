@@ -11,6 +11,7 @@
 #include <mpi.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 ParserError parse_file_lt(char const* const filename, Matrices* matrices) {
     char* contents = read_file(filename);

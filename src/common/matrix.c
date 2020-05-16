@@ -162,8 +162,8 @@ void vmatrix_change_offsets(
     size_t const start_column,
     size_t const end_column) {
 
-    assert(end_row - start_row <= m->m.rows);
-    assert(end_column - start_column <= m->m.columns);
+    m->m.rows = end_row - start_row;
+    m->m.columns = end_column - start_column;
     m->row_offset = start_row;
     m->column_offset = start_column;
 }
@@ -202,6 +202,14 @@ double* vmatrix_at_mut(VMatrix* m, size_t row, size_t column) {
         bellow_bounds(row, m->row_offset, column, m->column_offset);
     }
     return matrix_at_mut(&m->m, row - m->row_offset, column - m->column_offset);
+}
+
+size_t vmatrix_rows(VMatrix const* const m) {
+    return m->m.rows + m->row_offset;
+}
+
+size_t vmatrix_cols(VMatrix const* const m) {
+    return m->m.columns + m->column_offset;
 }
 
 void vmatrix_print_with_name(
@@ -274,6 +282,9 @@ void print_output(CompactMatrix const* const a, Matrix const* const b) {
                 ++iter;
             } else {
                 double aux = *MATRIX_AT(b, row, column);
+                /* if (aux != 0.0) */
+                /*     eprintln( */
+                /*         "(%zu, %zu): Tesing: %f < %f", row, column, aux, max); */
                 if (aux > max) {
                     max = aux;
                     max_pos = column;

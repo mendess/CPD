@@ -9,21 +9,27 @@ join_by() {
 set -e
 binary="$(grep '^PROG = ' makefile | cut -d'=' -f2 | sed -r 's/ //g')"
 targets=(serial openmp mpi)
-modes=(debug)
+modes=(release debug)
 make clean
 # make release
 if [[ "$1" = bench* ]]; then
-    make DFLAGS=-O0 DFLAGS+=-DNO_ASSERT
-    instances=large_instances
+    make DFLAGS+=-DNO_ASSERT
+    make release
+    instances=(instances large_instances)
+    # instances=instances
 else
-    make
-    instances=instances
+    make DFLAGS+=-DNO_ASSERT
+    make release
+    instances=(instances)
 fi
+export OMP_NUM_THREADS=4
+echo "Testing:"
+find "${instances[@]}" -type f | grep '\.in$' | sed -r 's/\.[^.]+$//g' | sort -V | uniq
 for mode in "${modes[@]}"; do
-    for file in $(find "$instances"/ -type f | grep '\.in$' | sed -r 's/\.[^.]+$//g' | sort -V | uniq); do
+    for file in $(find "${instances[@]}" -type f | grep '\.in$' | sed -r 's/\.[^.]+$//g' | sort -V | uniq); do
         rm -f /tmp/err
         set +e
-        if [[ "$1" == bench* ]] && command -v hyperfine &>/dev/null; then
+        if false && [[ "$1" == bench* ]] && command -v hyperfine &>/dev/null; then
             hyperfine \
                 --runs 2 --export-csv "bench_$(basename "$file")_${mode}.csv" \
                 --export-markdown "bench_$(basename "$file")_${mode}.md" \
@@ -48,15 +54,22 @@ for mode in "${modes[@]}"; do
                 answer="$(cat "$file.out")"
                 if [[ "$output" != "$answer" ]]; then
                     echo -e "\e[31m FAILED\e[0m"
-                    echo -e "Expected\n$answer"
-                    echo -e "Got\n$output"
-                    echo -e "stderr:"
-                    cat /tmp/err
+                    [ -n "$SHOW_ERRORS" ] && {
+                        echo -e "Expected\n$answer"
+                        echo -e "Got\n$output"
+                        echo -e "stderr:"
+                        cat /tmp/err
+                    }
+                    true
                 else
-                    echo -e "\e[32m ok\e[0m"
+                    echo -en "\e[32m ok\e[0m"
+                    if [[ "$1" == bench* ]]; then
+                        echo -n ' took '
+                        head -1 /tmp/time
+                    else
+                        echo
+                    fi
                 fi
-                [[ "$1" == bench* ]] && head -1 /tmp/time
-                true # clear $?
             done
         fi
     done

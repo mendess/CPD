@@ -84,21 +84,35 @@ void vmatrix_change_offsets(
     size_t end_column);
 
 #ifdef NO_ASSERT
-#    define VMATRIX_AT(m, row, column) \
-        (MATRIX_AT(                    \
-            (&(m)->m), (row) - (m)->row_offset, column - (m)->column_offset))
-#    define VMATRIX_AT_MUT(m, row, column) \
-        (MATRIX_AT_MUT(                    \
-            (&(m)->m), (row) - (m)->row_offset, column - (m)->column_offset))
-#else
-#    define VMATRIX_AT(m, row, column) (vmatrix_at((m), (row), (column)))
-#    define VMATRIX_AT_MUT(m, row, column) \
-        (vmatrix_at_mut((m), (row), (column)))
+#    define VMATRIX_AT(matrix, row, column) \
+        (MATRIX_AT(                         \
+            (&(matrix)->m),                 \
+            (row) - (matrix)->row_offset,   \
+            (column) - (matrix)->column_offset))
 
+#    define VMATRIX_AT_MUT(matrix, row, column) \
+        (MATRIX_AT_MUT(                         \
+            (&(matrix)->m),                     \
+            (row) - (matrix)->row_offset,       \
+            (column) - (matrix)->column_offset))
+#else
 double const* vmatrix_at(VMatrix const* a, size_t row, size_t column);
 
 double* vmatrix_at_mut(VMatrix* a, size_t row, size_t column);
+
+#    define VMATRIX_AT(m, row, column) (vmatrix_at((m), (row), (column)))
+
+#    define VMATRIX_AT_MUT(m, row, column) \
+        (vmatrix_at_mut((m), (row), (column)))
 #endif
+
+#define VMATRIX_ROWS(matrix) ((matrix)->m.rows + (matrix)->row_offset)
+
+#define VMATRIX_COLS(matrix) ((matrix)->m.columns + (matrix)->column_offset)
+
+size_t vmatrix_rows(VMatrix const* m);
+
+size_t vmatrix_cols(VMatrix const* m);
 
 void vmatrix_print(VMatrix const* m, size_t rows, size_t columns);
 

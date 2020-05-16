@@ -2,6 +2,7 @@
 #define MPI_DEBUG_H
 
 #include <stdnoreturn.h>
+#include <stdio.h>
 
 #define GDB_ATTACH_POINT (gdb_attach_point(__FILE__, __LINE__))
 

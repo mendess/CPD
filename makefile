@@ -16,7 +16,7 @@ RELEASE_DIR_COMMON = $(BUILD_DIR)/release/common
 RELEASE_DIR_SERIAL = $(BUILD_DIR)/release/serial
 RELEASE_DIR_OPENMP = $(BUILD_DIR)/release/openmp
 RELEASE_DIR_MPI    = $(BUILD_DIR)/release/mpi
-DEBUG_DIR_COMMON_MPI = $(BUILD_DIR)/release/mpi/common
+RELEASE_DIR_COMMON_MPI = $(BUILD_DIR)/release/mpi/common
 
 SOURCES_COMMON_DIR = $(SOURCES_DIR)/common
 SOURCES_SERIAL_DIR = $(SOURCES_DIR)/serial
@@ -43,7 +43,7 @@ OBJ_RELEASE_MPI    = $(foreach o, $(patsubst $(SOURCES_MPI_DIR)/%.c, %.o, $(SOUR
 ifndef DFLAGS
 	DFLAGS = -O0 -g -DDEBUG
 endif
-RFLAGS = -O2 -march=native -DNDEBUG
+RFLAGS = -O3 -march=native -DNDEBUG -DNO_ASSERT -flto
 
 override CFLAGS += -std=c11 -W -Wall -Wpedantic -pedantic -Werror=vla -flto
 MPIFLAGS = `mpicc --showme:compile` `mpicc --showme:link`
@@ -74,16 +74,19 @@ debug_mpi: __debug_dir $(OBJ_DEBUG_COMMON_MPI) $(OBJ_DEBUG_MPI)
 release: release_serial release_openmp release_mpi
 
 release_serial: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL)
-	@echo -e "\e[34mLinking $@\e[0m"
-	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL) $(RFLAGS) -o $(RELEASE_DIR_SERIAL)/$(PROG)
+	@echo -e "\e[34mLinking $@\e[32m"
+	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL) $(RFLAGS) -o $(RELEASE_DIR_SERIAL)/$(PROG) $(LFLAGS)
+	@echo -en "\e[0m"
 
 release_openmp: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP)
-	@echo -e "\e[34mLinking $@\e[0m"
-	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP) $(RFLAGS) -o $(RELEASE_DIR_OPENMP)/$(PROG) $(OMPFLAGS)
+	@echo -e "\e[34mLinking $@\e[32m"
+	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP) $(RFLAGS) -o $(RELEASE_DIR_OPENMP)/$(PROG) $(OMPFLAGS) $(LFLAGS)
+	@echo -en "\e[0m"
 
-release_mpi: __release_dir $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_MPI)
-	@echo -e "\e[34mLinking $@\e[0m"
-	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON_MPI) $(OBJ_RELEASE_MPI) $(RFLAGS) -o $(RELEASE_DIR_MPI)/$(PROG) -DMPI
+release_mpi: __release_dir $(OBJ_RELEASE_COMMON_MPI) $(OBJ_RELEASE_MPI)
+	@echo -e "\e[34mLinking $@\e[32m"
+	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON_MPI) $(OBJ_RELEASE_MPI) $(RFLAGS) -o $(RELEASE_DIR_MPI)/$(PROG) -DMPI $(LFLAGS)
+	@echo -en "\e[0m"
 
 $(DEBUG_DIR_COMMON)/%.o: $(SOURCES_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_COMMON)/%, $(SOURCES_COMMON_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS) -c -o $@

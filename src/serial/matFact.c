@@ -9,6 +9,8 @@
 
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
+static size_t I;
+
 void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
     assert(l->columns == r->rows);
     for (size_t i = 0; i < l->rows; i++) {
@@ -30,7 +32,19 @@ void matrix_b(
     while (iter != end) {
         double bij = 0;
         for (size_t k = 0; k < l->columns; k++) {
-            bij += *MATRIX_AT(l, iter->row, k) * *MATRIX_AT(r, k, iter->column);
+            double const* lik = MATRIX_AT(l, iter->row, k);
+            double const* rkj = MATRIX_AT(r, k, iter->column);
+            /* double old_b = bij; */
+            bij += *lik * *rkj;
+            /* eprintln( */
+            /*     "(%zu,%zu,%zu): %f = %f + (%f * %f)", */
+            /*     iter->row, */
+            /*     iter->column, */
+            /*     k, */
+            /*     bij, */
+            /*     old_b, */
+            /*     *lik, */
+            /*     *rkj); */
         }
         *MATRIX_AT_MUT(matrix, iter->row, iter->column) = bij;
         ++iter;
@@ -57,6 +71,8 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
                 ++line_iter;
                 ++counter;
             }
+            if (I == 0)
+                eprintln("Indexing (%zu, %zu) %zu values", row, k, counter);
             *MATRIX_AT_MUT(aux_l, row, k) =
                 *MATRIX_AT(&matrices->l, row, k) - matrices->alpha * aux;
         }
@@ -71,6 +87,7 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
         while (iter != end) {
             double aux = 0;
             size_t const column = iter->row;
+            size_t counter = 0;
             while (iter != end && iter->row == column) {
                 size_t const row = iter->column;
                 aux += DELTA(
@@ -78,6 +95,7 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
                     *MATRIX_AT(b, row, column),
                     *MATRIX_AT(&matrices->l, row, k));
                 ++iter;
+                ++counter;
             }
             *MATRIX_AT_MUT(aux_r, k, column) =
                 *MATRIX_AT(&matrices->r, k, column) - matrices->alpha * aux;
@@ -96,12 +114,18 @@ Matrix iter(Matrices* matrices) {
     Matrix aux_r = matrix_clone(&matrices->r);
     Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
     for (size_t i = 0; i < matrices->num_iterations; i++) {
+        I = i;
+        /* eprintln("Progress %zu/%zu", i + 1, matrices->num_iterations); */
         matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
         next_iter_l(matrices, &aux_l, &b);
+        if (i == 1)
+            matrix_print_with_name(&matrices->l, "L");
         next_iter_r(matrices, &aux_r, &b);
         swap(&matrices->l, &aux_l);
         swap(&matrices->r, &aux_r);
     }
+    /* matrix_print_with_name(&b, "Before"); */
+    matrix_print_with_name(&b, "After");
     matrix_b_full(&matrices->l, &matrices->r, &b);
     matrix_free(&aux_l);
     matrix_free(&aux_r);

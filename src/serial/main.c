@@ -21,7 +21,6 @@ int main(int argc, char const** argv) {
         default:
             break;
     }
-    cmatrix_print(&matrices.a);
 
     random_fill_LR(&matrices.l, &matrices.r);
     Matrix b = iter(&matrices);
