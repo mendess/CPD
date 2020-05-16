@@ -1,5 +1,5 @@
-#ifndef MATFACT_H
-#define MATFACT_H
+#ifndef MPI_MATFACT_H
+#define MPI_MATFACT_H
 #include "common/matrix.h"
 
 Matrix iter_mpi(VMatrices*);

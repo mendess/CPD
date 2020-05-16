@@ -134,6 +134,8 @@ typedef struct {
     VMatrix r;
 } VMatrices;
 
+Matrices matrices_from_vmatrices(VMatrices m);
+
 void vmatrices_free(VMatrices* m);
 
 void print_output(CompactMatrix const* const matrices, Matrix const* const b);

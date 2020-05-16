@@ -24,8 +24,7 @@ static inline void transpose_items(Item* dest, Item const* src, size_t n) {
     }
 }
 
-static void
-broadcast_header(Header* const header, MPI_Request* const request) {
+static void broadcast_header(Header* const header, MPI_Request* const request) {
     MPI_Datatype mpi_header_t;
     int blocklengths[] = {1, 1, 1, 1, 1, 1};
     MPI_Datatype types[] = {
@@ -195,15 +194,18 @@ ParserError parse_file_rt(char const* const filename, VMatrices* matrices) {
     MPI_Request request;
     broadcast_header(&header, &request);
 
-    CompactMatrix a = cmatrix_make_without_lengths(
-        header.users, header.items, header.non_zero_elems);
-
-    CompactMatrix at = cmatrix_make_without_lengths(
-        header.items, header.users, header.non_zero_elems);
+    CompactMatrix a;
+    CompactMatrix at;
 
     if (should_work_alone(header.items, header.users)) {
+        a = cmatrix_make(header.users, header.items, header.non_zero_elems);
+        at = cmatrix_make(header.items, header.users, header.non_zero_elems);
         error = parse_matrix_a(&content_iter, header.non_zero_elems, &a, &at);
     } else {
+        a = cmatrix_make_without_lengths(
+            header.users, header.items, header.non_zero_elems);
+        at = cmatrix_make_without_lengths(
+            header.items, header.users, header.non_zero_elems);
         error = spit_parse_a(&content_iter, header.non_zero_elems, &a, &at);
     }
     free(contents);

@@ -235,6 +235,17 @@ void matrices_free(Matrices* m) {
     matrix_free(&m->r);
 }
 
+Matrices matrices_from_vmatrices(VMatrices m) {
+    return (Matrices){
+        .num_iterations = m.num_iterations,
+        .alpha = m.alpha,
+        .a = m.a,
+        .a_transpose = m.a_transpose,
+        .l = m.l.m,
+        .r = m.r.m,
+    };
+}
+
 void vmatrices_free(VMatrices* m) {
     cmatrix_free(&m->a);
     cmatrix_free(&m->a_transpose);

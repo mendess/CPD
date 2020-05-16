@@ -33,7 +33,6 @@
         }                                       \
     }
 
-static size_t I;
 // FIXME: Delete them
 
 static MPI_Comm HORIZONTAL_COMM;
@@ -86,22 +85,30 @@ static void matrix_b(
 static void next_iter_l(
     VMatrices const* const matrices,
     VMatrix* const aux_l,
-    VMatrix const* const b) {
+    VMatrix const* const b,
+    ABounds const* const bounds) {
+    {
+        double const* const aux_l_end =
+            aux_l->m.data + aux_l->m.rows * aux_l->m.columns;
+
+        for (double* delta = aux_l->m.data; delta != aux_l_end; ++delta) {
+            *delta = 0.0;
+        }
+    }
 
     Item const* iter = matrices->a.items;
     Item const* const end = iter + matrices->a.current_items;
 
-    size_t last_visited_row = iter->row;
+    size_t row_to_visit = bounds->i.start;
     while (iter != end) {
         uint64_t counter = 0;
+        size_t const row = iter->row;
         for (size_t k = 0; k < matrices->l.m.columns; ++k) {
             double delta = 0;
             Item const* line_iter = iter;
-            size_t const row = line_iter->row;
-            if (row - last_visited_row > 1) {
-                for (last_visited_row += 1; last_visited_row < row;
-                     ++last_visited_row) {
-                    *VMATRIX_AT_MUT(aux_l, last_visited_row, k) = 0.0;
+            if (row_to_visit != row) {
+                for (; row_to_visit < row; ++row_to_visit) {
+                    *VMATRIX_AT_MUT(aux_l, row_to_visit, k) = 0.0;
                 }
             }
             counter = 0;
@@ -116,14 +123,14 @@ static void next_iter_l(
             }
             *VMATRIX_AT_MUT(aux_l, row, k) = delta;
         }
-        last_visited_row = iter->row;
+        ++row_to_visit;
         iter += counter;
     }
     size_t aux_rows = VMATRIX_ROWS(aux_l);
-    for (last_visited_row += 1; last_visited_row < aux_rows;
-         ++last_visited_row) {
+    // TODO: memset
+    for (; row_to_visit < aux_rows; ++row_to_visit) {
         for (size_t k = 0; k < aux_l->m.columns; ++k) {
-            *VMATRIX_AT_MUT(aux_l, last_visited_row, k) = 0.0;
+            *VMATRIX_AT_MUT(aux_l, row_to_visit, k) = 0.0;
         }
     }
 
@@ -147,22 +154,35 @@ static void next_iter_l(
 static void next_iter_r(
     VMatrices const* const matrices,
     VMatrix* const aux_r,
-    VMatrix const* const b) {
+    VMatrix const* const b,
+    ABounds const* const bounds) {
+
+    {
+        double const* const aux_r_end =
+            aux_r->m.data + aux_r->m.rows * aux_r->m.columns;
+
+        for (double* delta = aux_r->m.data; delta != aux_r_end; ++delta) {
+            *delta = 0.0;
+        }
+    }
 
     size_t aux_cols = VMATRIX_COLS(aux_r);
+    // calcular os deltas
     for (size_t k = 0; k < matrices->r.m.rows; ++k) {
         Item const* iter = matrices->a_transpose.items;
         Item const* const end = iter + matrices->a_transpose.current_items;
-        size_t last_visited_column = iter->row;
+        size_t column_to_visit = bounds->j.start;
+        // For each non-zero element of A (for j in A.cols)
         while (iter != end) {
             double delta = 0.0;
             size_t const column = iter->row;
-            if (column - last_visited_column > 1) {
-                for (last_visited_column += 1; last_visited_column < column;
-                     ++last_visited_column) {
-                    *VMATRIX_AT_MUT(aux_r, k, last_visited_column) = 0.0;
+            // compensar colunas que possao nao existir na matrix A que tenho
+            if (column_to_visit != column) {
+                for (; column_to_visit < column; ++column_to_visit) {
+                    *VMATRIX_AT_MUT(aux_r, k, column_to_visit) = 0.0;
                 }
             }
+            // For each line of A (for i in a.rows)
             while (iter != end && iter->row == column) {
                 size_t const row = iter->column;
                 delta += DELTA(
@@ -172,13 +192,15 @@ static void next_iter_r(
                 ++iter;
             }
             *VMATRIX_AT_MUT(aux_r, k, column) = delta;
-            last_visited_column = column;
+            ++column_to_visit;
         }
-        for (last_visited_column += 1; last_visited_column < aux_cols;
-             ++last_visited_column) {
-            *VMATRIX_AT_MUT(aux_r, k, last_visited_column) = 0.0;
+        // compensar colunas que possao nao existir na matrix A que tenho
+        for (; column_to_visit < aux_cols; ++column_to_visit) {
+            *VMATRIX_AT_MUT(aux_r, k, column_to_visit) = 0.0;
         }
     }
+
+    // somar os deltas dos outros processos
     MPI_Allreduce(
         MPI_IN_PLACE,
         aux_r->m.data,
@@ -190,7 +212,7 @@ static void next_iter_r(
     double const* const aux_r_end =
         aux_r->m.data + aux_r->m.rows * aux_r->m.columns;
     double const* r_iter = matrices->r.m.data;
-
+    // R (t+1) = R (t) - alpha * delta
     for (double* delta = aux_r->m.data; delta != aux_r_end; ++delta, ++r_iter) {
         *delta = *r_iter - matrices->alpha * *delta;
     }
@@ -211,10 +233,9 @@ Matrix iter_mpi(VMatrices* const matrices) {
         bounding_box.j.start,
         bounding_box.j.end);
     for (size_t i = 0; i < matrices->num_iterations; ++i) {
-        I = i;
         matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
-        next_iter_l(matrices, &aux_l, &b);
-        next_iter_r(matrices, &aux_r, &b);
+        next_iter_l(matrices, &aux_l, &b, &bounding_box);
+        next_iter_r(matrices, &aux_r, &b, &bounding_box);
         vswap(&matrices->l, &aux_l);
         vswap(&matrices->r, &aux_r);
     }

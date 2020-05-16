@@ -5,6 +5,7 @@
 #include "mpi/parser.h"
 #include "mpi/util.h"
 #include "mpi/wrappers.h"
+#include "serial/matFact.h"
 
 #include <assert.h>
 #include <limits.h>
@@ -70,9 +71,11 @@ int main(int argc, char** argv) {
     }
     if (should_work_alone(matrices.a.n_rows, matrices.a.n_cols)) {
         if (ME == 0) {
+            eputln("I work alone");
             random_fill_LR(&matrices.l.m, &matrices.r.m);
+            Matrices normal_matrices = matrices_from_vmatrices(matrices);
             NPROCS = 1;
-            Matrix b = iter_mpi(&matrices);
+            Matrix b = iter(&normal_matrices);
             print_output(&matrices.a, &b);
             matrix_free(&b);
         }

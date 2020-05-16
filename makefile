@@ -61,32 +61,32 @@ release: $(RELEASE_DIR_SERIAL)/$(PROG) $(RELEASE_DIR_OPENMP)/$(PROG) $(RELEASE_D
 
 $(DEBUG_DIR_SERIAL)/$(PROG): $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL)
 	@echo -e "\e[34mLinking $@\e[32m"
-	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_SERIAL) $(DFLAGS) -o $@ $(LFLAGS)
+	$(CC) $(CFLAGS) -I$(HEADERS) $^ $(DFLAGS) -o $@ $(LFLAGS)
 	@echo -en "\e[0m"
 
 $(DEBUG_DIR_OPENMP)/$(PROG): $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP)
 	@echo -e "\e[34mLinking $@\e[32m"
-	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP) $(DFLAGS) -o $@ $(OMPFLAGS) $(LFLAGS)
+	$(CC) $(CFLAGS) -I$(HEADERS) $^ $(DFLAGS) -o $@ $(OMPFLAGS) $(LFLAGS)
 	@echo -en "\e[0m"
 
-$(DEBUG_DIR_MPI)/$(PROG): $(OBJ_DEBUG_COMMON_MPI) $(OBJ_DEBUG_MPI)
+$(DEBUG_DIR_MPI)/$(PROG): $(OBJ_DEBUG_COMMON_MPI) $(OBJ_DEBUG_MPI) $(DEBUG_DIR_COMMON_MPI)/matFact.o
 	@echo -e "\e[34mLinking $@\e[32m"
-	mpicc $(CFLAGS) -I$(HEADERS) -rdynamic $(OBJ_DEBUG_COMMON_MPI) $(OBJ_DEBUG_MPI) $(DFLAGS) -o $@ -DMPI $(LFLAGS)
+	mpicc $(CFLAGS) -I$(HEADERS) -rdynamic $^ $(DFLAGS) -o $@ -DMPI $(LFLAGS)
 	@echo -en "\e[0m"
 
 $(RELEASE_DIR_SERIAL)/$(PROG): $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL)
 	@echo -e "\e[34mLinking $@\e[32m"
-	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL) $(RFLAGS) -o $@ $(LFLAGS)
+	$(CC) $(CFLAGS) -I$(HEADERS) $^ $(RFLAGS) -o $@ $(LFLAGS)
 	@echo -en "\e[0m"
 
 $(RELEASE_DIR_OPENMP)/$(PROG): $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP)
 	@echo -e "\e[34mLinking $@\e[32m"
-	$(CC) $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_OPENMP) $(RFLAGS) -o $@ $(OMPFLAGS) $(LFLAGS)
+	$(CC) $(CFLAGS) -I$(HEADERS) $^ $(RFLAGS) -o $@ $(OMPFLAGS) $(LFLAGS)
 	@echo -en "\e[0m"
 
-$(RELEASE_DIR_MPI)/$(PROG): $(OBJ_RELEASE_COMMON_MPI) $(OBJ_RELEASE_MPI)
+$(RELEASE_DIR_MPI)/$(PROG): $(OBJ_RELEASE_COMMON_MPI) $(OBJ_RELEASE_MPI) $(RELEASE_DIR_COMMON_MPI)/matFact.o
 	@echo -e "\e[34mLinking $@\e[32m"
-	mpicc $(CFLAGS) -I$(HEADERS) $(OBJ_RELEASE_COMMON_MPI) $(OBJ_RELEASE_MPI) $(RFLAGS) -o $@ -DMPI $(LFLAGS)
+	mpicc $(CFLAGS) -I$(HEADERS) $^ $(RFLAGS) -o $@ -DMPI $(LFLAGS)
 	@echo -en "\e[0m"
 
 $(DEBUG_DIR_COMMON)/%.o: $(SOURCES_COMMON) | $(DEBUG_DIR_COMMON)
@@ -98,11 +98,14 @@ $(DEBUG_DIR_SERIAL)/%.o: $(SOURCES_SERIAL) $(SOURCES_COMMON) | $(DEBUG_DIR_SERIA
 $(DEBUG_DIR_OPENMP)/%.o: $(SOURCES_OPENMP) $(SOURCES_COMMON) | $(DEBUG_DIR_OPENMP)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_OPENMP)/%, $(SOURCES_OPENMP_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS) -c -o $@ $(OMPFLAGS)
 
-$(DEBUG_DIR_MPI)/%.o: $(SOURCES_MPI) $(SOURCES_COMMON) | $(DEBUG_DIR_MPI)
+$(DEBUG_DIR_MPI)/%.o: $(SOURCES_MPI) $(SOURCES_COMMON) src/serial/matFact.c | $(DEBUG_DIR_MPI)
 	mpicc $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_MPI)/%, $(SOURCES_MPI_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS) -c -o $@ -DMPI
 
 $(DEBUG_DIR_COMMON_MPI)/%.o: $(SOURCES_COMMON) | $(DEBUG_DIR_COMMON_MPI)
 	mpicc $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_COMMON_MPI)/%, $(SOURCES_COMMON_DIR)/%, $@)) $(CFLAGS) $(DFLAGS) -I$(HEADERS) -c -o $@ -DMPI
+
+$(DEBUG_DIR_COMMON_MPI)/matFact.o: src/serial/matFact.c | $(DEBUG_DIR_COMMON_MPI)
+	mpicc $(patsubst %.o, %.c, $(patsubst $(DEBUG_DIR_COMMON_MPI)/%, $(SOURCES_SERIAL_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS) -c -o $@ -DMPI
 
 $(RELEASE_DIR_COMMON)/%.o: $(SOURCES_COMMON) | $(RELEASE_DIR_COMMON)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_COMMON)/%, $(SOURCES_COMMON_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS) -c -o $@
@@ -113,11 +116,14 @@ $(RELEASE_DIR_SERIAL)/%.o: $(SOURCES_SERIAL) $(SOURCES_COMMON) | $(RELEASE_DIR_S
 $(RELEASE_DIR_OPENMP)/%.o: $(SOURCES_OPENMP) $(SOURCES_COMMON) | $(RELEASE_DIR_OPENMP)
 	$(CC) $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_OPENMP)/%, $(SOURCES_OPENMP_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS) -c -o $@ $(OMPFLAGS)
 
-$(RELEASE_DIR_MPI)/%.o: $(SOURCES_MPI) $(SOURCES_COMMON) | $(RELEASE_DIR_MPI)
+$(RELEASE_DIR_MPI)/%.o: $(SOURCES_MPI) $(SOURCES_COMMON) src/serial/matFact.c | $(RELEASE_DIR_MPI)
 	mpicc $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_MPI)/%, $(SOURCES_MPI_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS) -I$(HEADERS_MPI) -c -o $@ -DMPI
 
 $(RELEASE_DIR_COMMON_MPI)/%.o: $(SOURCES_COMMON) | $(RELEASE_DIR_COMMON_MPI)
 	mpicc $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_COMMON_MPI)/%, $(SOURCES_COMMON_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS) -c -o $@ -DMPI
+
+$(RELEASE_DIR_COMMON_MPI)/matFact.o: src/serial/matFact.c | $(RELEASE_DIR_COMMON_MPI)
+	mpicc $(patsubst %.o, %.c, $(patsubst $(RELEASE_DIR_COMMON_MPI)/%, $(SOURCES_SERIAL_DIR)/%, $@)) $(CFLAGS) $(RFLAGS) -I$(HEADERS) -c -o $@ -DMPI
 
 test:
 	./run_tests.sh
@@ -161,8 +167,8 @@ $(RELEASE_DIR_COMMON_MPI):
 matFact: $(DEBUG_DIR_SERIAL)/$(PROG)
 	cp $^ $@
 
-matFact-omp: $(DEBUG_DIR_SERIAL)/$(PROG)
+matFact-omp: $(DEBUG_DIR_OPENMP)/$(PROG)
 	cp $^ $@
 
-matFact-mpi: $(DEBUG_DIR_SERIAL)/$(PROG)
+matFact-mpi: $(DEBUG_DIR_MPI)/$(PROG)
 	cp $^ $@
