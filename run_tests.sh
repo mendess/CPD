@@ -23,10 +23,8 @@ else
 fi
 export OMP_NUM_THREADS=4
 NUM_PROCS_MPI="${NUM_PROCS_MPI:-4}"
-echo "Testing:"
-find "${instances[@]}" -type f | grep '\.in$' | sed -r 's/\.[^.]+$//g' | sort -V | uniq
 for mode in "${modes[@]}"; do
-    for file in $(find "${instances[@]}" -type f | grep '\.in$' | sed -r 's/\.[^.]+$//g' | sort -V | uniq); do
+    for file in $(find "${instances[@]}" -type f | grep '\.in$' | sed -r 's/\.[^.]+$//g' | sort -V | uniq | grep -v '1e6'); do
         rm -f /tmp/err
         set +e
         if false && [[ "$1" == bench* ]] && command -v hyperfine &>/dev/null; then

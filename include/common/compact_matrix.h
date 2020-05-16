@@ -31,6 +31,8 @@ void cmatrix_sort(CompactMatrix* m);
 
 void cmatrix_print(CompactMatrix const* m);
 
+void cmatrix_print_items(CompactMatrix const* m);
+
 void cmatrix_free(CompactMatrix* m);
 
 #endif // COMPACT_MATRIX_H

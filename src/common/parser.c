@@ -185,14 +185,12 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
         return error;
     }
 
-    Matrix l = matrix_make(header.users, header.features);
-    Matrix r = matrix_make(header.features, header.items);
     cmatrix_sort(&a_transpose);
     *matrices = (Matrices){
         .num_iterations = header.num_iterations,
         .alpha = header.alpha,
-        .l = l,
-        .r = r,
+        .l = matrix_make(header.users, header.features),
+        .r = matrix_make(header.features, header.items),
         .a = a,
         .a_transpose = a_transpose,
     };

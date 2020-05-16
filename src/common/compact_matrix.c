@@ -71,6 +71,19 @@ void cmatrix_print(CompactMatrix const* m) {
     assert(iter == end);
 }
 
+void cmatrix_print_items(CompactMatrix const* const m) {
+    Item const* iter = m->items;
+    Item const* const end = iter + m->current_items;
+    while (iter != end) {
+        eprintln(
+            "i{row: %zu, column: %zu, value: %f}",
+            iter->row,
+            iter->column,
+            iter->value);
+        ++iter;
+    }
+}
+
 static int item_compare(void const* a, void const* b) {
     Item const* a_ = a;
     Item const* b_ = b;

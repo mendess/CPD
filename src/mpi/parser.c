@@ -151,7 +151,6 @@ static ParserError spit_parse_a(
         a->items = realloc(a->items, a->current_items * sizeof(Item));
         at->items = realloc(at->items, at->current_items * sizeof(Item));
     }
-    cmatrix_sort(at);
 
     if (n_lines < non_zero_elems) {
         fputs("Not as many elements as expected\n", stderr);
@@ -215,6 +214,7 @@ ParserError parse_file_rt(char const* const filename, VMatrices* matrices) {
         MPI_Wait(&request, NULL);
         return error;
     }
+    cmatrix_sort(&at);
     ABounds abounds = a_bounds(0, a.n_rows, a.n_cols);
     *matrices = (VMatrices){
         .num_iterations = header.num_iterations,
