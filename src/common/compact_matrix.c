@@ -7,8 +7,8 @@
 #include <string.h>
 
 // CSR (compressed sparse row)
-CompactMatrix
-cmatrix_make(size_t rows, size_t const columns, size_t const num_elems) {
+CompactMatrix cmatrix_make(
+    uint32_t const rows, uint32_t const columns, size_t const num_elems) {
     CompactMatrix c = (CompactMatrix){
         .items = malloc(sizeof(Item) * num_elems),
         .row_lengths = calloc(sizeof(size_t), rows),
@@ -20,7 +20,7 @@ cmatrix_make(size_t rows, size_t const columns, size_t const num_elems) {
 }
 
 CompactMatrix cmatrix_make_without_lengths(
-    size_t rows, size_t const columns, size_t const num_elems) {
+    uint32_t const rows, uint32_t const columns, size_t const num_elems) {
     CompactMatrix c = (CompactMatrix){
         .items = malloc(sizeof(Item) * num_elems),
         .row_lengths = NULL,
@@ -33,8 +33,8 @@ CompactMatrix cmatrix_make_without_lengths(
 
 void cmatrix_add(
     CompactMatrix* const m,
-    size_t const row,
-    size_t const column,
+    uint32_t const row,
+    uint32_t const column,
     double const value) {
     assert(m->current_items < m->_total_items);
     ++m->row_lengths[row];
@@ -76,7 +76,7 @@ void cmatrix_print_items(CompactMatrix const* const m) {
     Item const* const end = iter + m->current_items;
     while (iter != end) {
         eprintln(
-            "i{row: %zu, column: %zu, value: %f}",
+            "i{row: %u, column: %u, value: %f}",
             iter->row,
             iter->column,
             iter->value);
