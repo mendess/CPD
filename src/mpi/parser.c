@@ -63,7 +63,7 @@ static ParserError spit_parse_a(
 #ifndef NO_ASSERTS
     size_t out_of_bounds = 0;
 #endif
-    int current_proc = 0;
+    unsigned current_proc = 0;
     while (scan_line(
                iter,
                3,
@@ -94,7 +94,7 @@ static ParserError spit_parse_a(
                 value);
             return PARSER_ERROR_INVALID_FORMAT;
         }
-        int new_proc = proc_from_row_column(row, column, a->n_rows, a->n_cols);
+        unsigned new_proc = proc_from_row_column(row, column, a->n_rows, a->n_cols);
         if (new_proc != current_proc) {
 #ifndef NO_ASSERTS
             if (out_of_bounds > 0) {

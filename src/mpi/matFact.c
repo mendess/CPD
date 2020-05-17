@@ -78,11 +78,11 @@ static void next_iter_l(
             double delta = 0;
             Item const* line_iter = iter;
             if (row_to_visit != row) {
-                for (; row_to_visit < row; ++row_to_visit) {
-                    for (size_t k = 0; k < aux_l->m.columns; ++k) {
-                        *VMATRIX_AT_MUT(aux_l, row_to_visit, k) = 0.0;
-                    }
-                }
+                double* k = VMATRIX_AT_MUT(aux_l, row_to_visit, 0);
+                double const* const kend =
+                    k + aux_l->m.columns * (row - row_to_visit);
+                while (k != kend) *k++ = 0.0;
+                row_to_visit = row;
             }
             counter = 0;
             while (line_iter != end && line_iter->row == row) {
@@ -100,11 +100,11 @@ static void next_iter_l(
         iter += counter;
     }
     size_t aux_rows = VMATRIX_ROWS(aux_l);
-    // TODO: memset
-    for (; row_to_visit < aux_rows; ++row_to_visit) {
-        for (size_t k = 0; k < aux_l->m.columns; ++k) {
-            *VMATRIX_AT_MUT(aux_l, row_to_visit, k) = 0.0;
-        }
+    if (row_to_visit < aux_rows) {
+        double* k = VMATRIX_AT_MUT(aux_l, row_to_visit, 0);
+        double const* const kend =
+            k + aux_l->m.columns * (aux_rows - row_to_visit);
+        while (k != kend) *k++ = 0.0;
     }
 
     MPI_Allreduce(
@@ -142,9 +142,10 @@ static void next_iter_r(
             size_t const column = iter->row;
             // compensar colunas que possao nao existir na matrix A que tenho
             if (column_to_visit != column) {
-                for (; column_to_visit < column; ++column_to_visit) {
-                    *VMATRIX_AT_MUT(aux_r, k, column_to_visit) = 0.0;
-                }
+                double* k_iter = VMATRIX_AT_MUT(aux_r, k, column_to_visit);
+                double const* const kend = k_iter + (column - column_to_visit);
+                while (k_iter != kend) *k_iter++ = 0.0;
+                column_to_visit = column;
             }
             // For each line of A (for i in a.rows)
             while (iter != end && iter->row == column) {
@@ -158,9 +159,11 @@ static void next_iter_r(
             *VMATRIX_AT_MUT(aux_r, k, column) = delta;
             ++column_to_visit;
         }
-        // compensar colunas que possao nao existir na matrix A que tenho
-        for (; column_to_visit < aux_cols; ++column_to_visit) {
-            *VMATRIX_AT_MUT(aux_r, k, column_to_visit) = 0.0;
+        // compensar colunas que possam nao existir na matrix A que tenho
+        if (column_to_visit < aux_cols) {
+            double* k_iter = VMATRIX_AT_MUT(aux_r, k, column_to_visit);
+            double const* const kend = k_iter + (aux_cols - column_to_visit);
+            while (k_iter != kend) *k_iter++ = 0.0;
         }
     }
 
