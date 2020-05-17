@@ -2,12 +2,14 @@
 #include "common/parser.h"
 #include "mpi/cmatrix.h"
 #include "mpi/matFact.h"
-#include "mpi/mpi_size_t.h"
 #include "mpi/parser.h"
 #include "mpi/util.h"
+#include "mpi/wrappers.h"
+#include "serial/matFact.h"
 
 #include <assert.h>
 #include <limits.h>
+#include <math.h>
 #include <mpi.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -31,18 +33,29 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Usage: %s [filename]\n", argv[0]);
         return EXIT_FAILURE;
     }
-    int me, nprocs;
     MPI_Init(&argc, &argv);
+    int me, nprocs;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
-    Matrices matrices = {0};
-    G_ME = me;
-    if (me == 0)
-        eprintln("Filename: %s", argv[1]);
+    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    assert(me >= 0);
+    assert(nprocs >= 0);
+    ME = (unsigned) me;
+    NPROCS = (unsigned) nprocs;
+    NPROCS = floor(sqrt(NPROCS));
+    NPROCS *= NPROCS;
+    CHECKER_BOARD_SIDE = sqrt(NPROCS);
+    VMatrices matrices = {0};
+    G_ME = ME;
+    if (ME == 0) {
+        eprintln("Filename:            %s", argv[1]);
+        eprintln("# Processes:         %u", NPROCS);
+        eprintln("Checker Board side:  %u", CHECKER_BOARD_SIDE);
+    }
     eprintln("PID: %d", getpid());
 
-    if (me == 0) {
-        ParserError error = parse_file_lt(argv[1], &matrices);
+    if (ME == 0) {
+        ParserError error = parse_file_rt(argv[1], &matrices);
         switch (error) {
             case PARSER_ERROR_IO:
                 eputln("IO Error");
@@ -53,59 +66,30 @@ int main(int argc, char** argv) {
             default:
                 break;
         }
+    } else {
+        recv_parsed_file(&matrices);
     }
-    SizeTPacket packet = {
-        .num_iterations = matrices.num_iterations,
-        .num_items = matrices.a.current_items,
-        .a_nrows = matrices.a.n_rows,
-        .a_ncols = matrices.a.n_cols,
-        .k = matrices.l.rows,
-        .i = matrices.l.columns,
-        .j = matrices.r.columns};
-    MPI_Bcast(&packet, NSizeT, MPI_SIZE_T, 0, MPI_COMM_WORLD);
-    if (nprocs >= 0 && (unsigned) nprocs > packet.k) {
-        if (me == 0) {
-            matrices.l = matrix_make(packet.k, packet.i);
-            matrices.r = matrix_make(packet.k, packet.j);
-            random_fill_LT_R(&matrices.l, &matrices.r);
-            Matrix b = iter_mpi(&matrices, 1, me);
-            print_output(&matrices, &b);
+    if (should_work_alone(matrices.a.n_rows, matrices.a.n_cols)) {
+        if (ME == 0) {
+            eputln("I work alone");
+            random_fill_LR(&matrices.l.m, &matrices.r.m);
+            Matrices normal_matrices = matrices_from_vmatrices(matrices);
+            NPROCS = 1;
+            Matrix b = iter(&normal_matrices);
+            print_output(&matrices.a, &b);
             matrix_free(&b);
         }
     } else {
-        if (me != 0) {
-            matrices.a.items = malloc(sizeof(Item) * packet.num_items);
-            matrices.a_transpose.items =
-                malloc(sizeof(Item) * packet.num_items);
-        }
-        matrices.num_iterations = packet.num_iterations;
-        matrices.a.current_items = matrices.a_transpose.current_items =
-            packet.num_items;
-        matrices.a.n_rows = matrices.a_transpose.n_cols = packet.a_nrows;
-        matrices.a.n_cols = matrices.a_transpose.n_rows = packet.a_ncols;
-
-        cmatrix_bcast_items(matrices.a.items, packet.num_items, 0);
-        cmatrix_bcast_items(matrices.a_transpose.items, packet.num_items, 0);
-        MPI_Bcast(&matrices.alpha, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-        size_t k = me == 0 ? packet.k : slice_len(me, nprocs, packet.k);
-        matrices.l = matrix_make(k, packet.i);
-        matrices.r = matrix_make(k, packet.j);
-
-        if (me == 0) {
-            random_fill_LT_R(&matrices.l, &matrices.r);
-        } else {
-            random_fill_LT_R_mpi(
-                &matrices.l, &matrices.r, me, nprocs, packet.k);
-        }
-        Matrix b = iter_mpi(&matrices, nprocs, me);
-        if (me == 0)
-            print_output(&matrices, &b);
+        random_fill_LR_parts(&matrices.l.m, &matrices.r.m, &matrices.a);
+        Matrix b = iter_mpi(&matrices);
+        if (ME == 0)
+            print_output(&matrices.a, &b);
         matrix_free(&b);
     }
 
-    matrices_free(&matrices);
+    vmatrices_free(&matrices);
 
+    eputln("Finalizing");
     MPI_Finalize();
     return 0;
 }

@@ -5,167 +5,236 @@
 #include "common/matrix.h"
 #include "common/parser.h"
 #include "mpi/util.h"
+#include "mpi/wrappers.h"
 
 #include <assert.h>
 #include <mpi.h>
 #include <stdio.h>
 #include <string.h>
 
-#ifndef MPI
-#    define MPI
-#endif
-
-int G_ME;
-
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
-static void bcast_matrix(Matrix* b);
+static MPI_Comm HORIZONTAL_COMM;
+static MPI_Comm VERTICAL_COMM;
 
-void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* b) {
-    assert(l->rows == r->rows);
-    for (size_t i = 0; i < l->columns; i++) {
-        for (size_t j = 0; j < r->columns; ++j) {
+static void matrix_b_full(
+    VMatrix const* const l,
+    VMatrix const* const r,
+    VMatrix* const b,
+    CompactMatrix const* const a) {
+
+    assert(l->m.columns == r->m.rows);
+    ABounds bounding_box = a_bounds(ME, a->n_rows, a->n_cols);
+    Item const* iter = a->items;
+    Item const* const end = iter + a->current_items;
+    for (size_t i = bounding_box.i.start; i < bounding_box.i.end; i++) {
+        for (size_t j = bounding_box.j.start; j < bounding_box.j.end; ++j) {
             double bij = 0;
-            for (size_t k = 0; k < l->rows; ++k) {
-                bij += *MATRIX_AT(l, k, i) * *MATRIX_AT(r, k, j);
+            if (iter != end && iter->row == i && iter->column == j) {
+                ++iter;
+            } else {
+                for (size_t k = 0; k < l->m.columns; ++k) {
+                    bij += *VMATRIX_AT(l, i, k) * *VMATRIX_AT(r, k, j);
+                }
             }
-            *MATRIX_AT_MUT(b, i, j) = bij;
+            *VMATRIX_AT_MUT(b, i, j) = bij;
         }
     }
 }
 
-void matrix_b(
-    Matrix const* const l,
-    Matrix const* const r,
-    Matrix* const b,
+static void matrix_b(
+    VMatrix const* const l,
+    VMatrix const* const r,
+    VMatrix* const b,
     CompactMatrix const* const a) {
 
     Item const* iter = a->items;
     Item const* const end = iter + a->current_items;
     while (iter != end) {
         double bij = 0;
-        for (size_t k = 0; k < l->rows; k++) {
-            bij += *MATRIX_AT(l, k, iter->row) * *MATRIX_AT(r, k, iter->column);
+        for (size_t k = 0; k < l->m.columns; ++k) {
+            bij +=
+                *VMATRIX_AT(l, iter->row, k) * *VMATRIX_AT(r, k, iter->column);
         }
-        *MATRIX_AT_MUT(b, iter->row, iter->column) = bij;
+        *VMATRIX_AT_MUT(b, iter->row, iter->column) = bij;
         ++iter;
     }
 }
 
-void next_iter_l(
-    Matrices const* const matrices,
-    Matrix* const aux_l,
-    Matrix const* const b,
-    size_t nK) {
+static void next_iter_l(
+    VMatrices const* const matrices,
+    VMatrix* const aux_l,
+    VMatrix const* const b,
+    ABounds const* const bounds) {
 
     Item const* iter = matrices->a.items;
     Item const* const end = iter + matrices->a.current_items;
 
+    size_t row_to_visit = bounds->i.start;
     while (iter != end) {
-        size_t counter = 0;
-        for (size_t k = 0; k < nK; ++k) {
-            double aux = 0;
+        uint64_t counter = 0;
+        size_t const row = iter->row;
+        for (size_t k = 0; k < matrices->l.m.columns; ++k) {
+            double delta = 0;
             Item const* line_iter = iter;
-            size_t const row = line_iter->row;
+            if (row_to_visit != row) {
+                for (; row_to_visit < row; ++row_to_visit) {
+                    for (size_t k = 0; k < aux_l->m.columns; ++k) {
+                        *VMATRIX_AT_MUT(aux_l, row_to_visit, k) = 0.0;
+                    }
+                }
+            }
             counter = 0;
             while (line_iter != end && line_iter->row == row) {
                 size_t const column = line_iter->column;
-                aux += DELTA(
+                delta += DELTA(
                     line_iter->value,
-                    *MATRIX_AT(b, row, column),
-                    *MATRIX_AT(&matrices->r, k, column));
+                    *VMATRIX_AT(b, row, column),
+                    *VMATRIX_AT(&matrices->r, k, column));
                 ++line_iter;
                 ++counter;
             }
-            *MATRIX_AT_MUT(aux_l, k, row) =
-                *MATRIX_AT(&matrices->l, k, row) - matrices->alpha * aux;
+            *VMATRIX_AT_MUT(aux_l, row, k) = delta;
         }
+        ++row_to_visit;
         iter += counter;
     }
+    size_t aux_rows = VMATRIX_ROWS(aux_l);
+    // TODO: memset
+    for (; row_to_visit < aux_rows; ++row_to_visit) {
+        for (size_t k = 0; k < aux_l->m.columns; ++k) {
+            *VMATRIX_AT_MUT(aux_l, row_to_visit, k) = 0.0;
+        }
+    }
+
+    MPI_Allreduce(
+        MPI_IN_PLACE,
+        aux_l->m.data,
+        aux_l->m.rows * aux_l->m.columns,
+        MPI_DOUBLE,
+        MPI_SUM,
+        HORIZONTAL_COMM);
+
+    double const* const aux_l_end =
+        aux_l->m.data + aux_l->m.rows * aux_l->m.columns;
+    double const* l_iter = matrices->l.m.data;
+
+    for (double* i = aux_l->m.data; i != aux_l_end; ++i, ++l_iter) {
+        *i = *l_iter - matrices->alpha * *i;
+    }
 }
 
-void next_iter_r(
-    Matrices const* const matrices,
-    Matrix* const aux_r,
-    Matrix const* const b,
-    size_t nK) {
+static void next_iter_r(
+    VMatrices const* const matrices,
+    VMatrix* const aux_r,
+    VMatrix const* const b,
+    ABounds const* const bounds) {
 
-    for (size_t k = 0; k < nK; ++k) {
+    size_t aux_cols = VMATRIX_COLS(aux_r);
+    // calcular os deltas
+    for (size_t k = 0; k < matrices->r.m.rows; ++k) {
         Item const* iter = matrices->a_transpose.items;
         Item const* const end = iter + matrices->a_transpose.current_items;
+        size_t column_to_visit = bounds->j.start;
+        // For each non-zero element of A (for j in A.cols)
         while (iter != end) {
-            double aux = 0;
+            double delta = 0.0;
             size_t const column = iter->row;
+            // compensar colunas que possao nao existir na matrix A que tenho
+            if (column_to_visit != column) {
+                for (; column_to_visit < column; ++column_to_visit) {
+                    *VMATRIX_AT_MUT(aux_r, k, column_to_visit) = 0.0;
+                }
+            }
+            // For each line of A (for i in a.rows)
             while (iter != end && iter->row == column) {
                 size_t const row = iter->column;
-                aux += DELTA(
+                delta += DELTA(
                     iter->value,
-                    *MATRIX_AT(b, row, column),
-                    *MATRIX_AT(&matrices->l, k, row));
+                    *VMATRIX_AT(b, row, column),
+                    *VMATRIX_AT(&matrices->l, row, k));
                 ++iter;
             }
-            *MATRIX_AT_MUT(aux_r, k, column) =
-                *MATRIX_AT(&matrices->r, k, column) - matrices->alpha * aux;
+            *VMATRIX_AT_MUT(aux_r, k, column) = delta;
+            ++column_to_visit;
+        }
+        // compensar colunas que possao nao existir na matrix A que tenho
+        for (; column_to_visit < aux_cols; ++column_to_visit) {
+            *VMATRIX_AT_MUT(aux_r, k, column_to_visit) = 0.0;
         }
     }
-}
 
-void bcast_matrix(Matrix* const b) {
-    if (MPI_Bcast(
-            b->data, b->columns * b->rows, MPI_DOUBLE, 0, MPI_COMM_WORLD)) {
-        debug_print_backtrace("couldn't broadcast matrix");
+    // somar os deltas dos outros processos
+    MPI_Allreduce(
+        MPI_IN_PLACE,
+        aux_r->m.data,
+        aux_r->m.rows * aux_r->m.columns,
+        MPI_DOUBLE,
+        MPI_SUM,
+        VERTICAL_COMM);
+
+    double const* const aux_r_end =
+        aux_r->m.data + aux_r->m.rows * aux_r->m.columns;
+    double const* r_iter = matrices->r.m.data;
+    // R (t+1) = R (t) - alpha * delta
+    for (double* delta = aux_r->m.data; delta != aux_r_end; ++delta, ++r_iter) {
+        *delta = *r_iter - matrices->alpha * *delta;
     }
 }
 
-void send_matrix(Matrix const* const m, int const to) {
-    if (MPI_Send(
-            m->data, m->rows * m->columns, MPI_DOUBLE, to, 0, MPI_COMM_WORLD)) {
-        debug_print_backtrace("couldn't send matrix slice");
-    }
-}
-
-void receive_matrix_slice(Matrix* const m, int const from, Slice const s) {
-    if (MPI_Recv(
-            MATRIX_AT_MUT(m, s.start, 0),
-            (s.end - s.start) * m->columns,
-            MPI_DOUBLE,
-            from,
-            0,
-            MPI_COMM_WORLD,
-            NULL)) {
-        debug_print_backtrace("couldn't receive matrix slice");
-    }
-}
-
-// This function is only define for nprocs > l->rows
-Matrix iter_mpi(
-    Matrices* const matrices, int const nprocs, int const me) {
-    Matrix aux_l = matrix_clone(&matrices->l);
-    Matrix aux_r = matrix_clone(&matrices->r);
-    Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
+// This function is only defined for NPROCS > l->rows
+Matrix iter_mpi(VMatrices* const matrices) {
+    unsigned hor_color = ME / CHECKER_BOARD_SIDE;
+    unsigned ver_color = CHECKER_BOARD_SIDE + (ME % CHECKER_BOARD_SIDE);
+    MPI_Comm_split(MPI_COMM_WORLD, hor_color, ME, &HORIZONTAL_COMM);
+    MPI_Comm_split(MPI_COMM_WORLD, ver_color, ME, &VERTICAL_COMM);
+    VMatrix aux_l = vmatrix_shallow_clone(&matrices->l);
+    VMatrix aux_r = vmatrix_shallow_clone(&matrices->r);
+    ABounds bounding_box = a_bounds(ME, matrices->a.n_rows, matrices->a.n_cols);
+    VMatrix b = vmatrix_make(
+        bounding_box.i.start,
+        bounding_box.i.end,
+        bounding_box.j.start,
+        bounding_box.j.end);
     for (size_t i = 0; i < matrices->num_iterations; ++i) {
-        if (me == 0) {
-            /* eprintln("Progress %zu/%zu", i + 1, matrices->num_iterations); */
-            matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
-        }
-        bcast_matrix(&b);
-        next_iter_l(matrices, &aux_l, &b, me == 0 ? slice_len(0, nprocs, aux_l.rows) : aux_l.rows);
-        next_iter_r(matrices, &aux_r, &b, me == 0 ? slice_len(0, nprocs, aux_r.rows) : aux_r.rows);
-        swap(&matrices->l, &aux_l);
-        swap(&matrices->r, &aux_r);
-        if (me != 0) {
-            send_matrix(&matrices->l, 0);
-            send_matrix(&matrices->r, 0);
-        } else {
-            for (int proc = 1; proc < nprocs; ++proc) {
-                Slice proc_s = slice_rows(proc, nprocs, matrices->l.rows);
-                receive_matrix_slice(&matrices->l, proc, proc_s);
-                receive_matrix_slice(&matrices->r, proc, proc_s);
+        matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
+        next_iter_l(matrices, &aux_l, &b, &bounding_box);
+        next_iter_r(matrices, &aux_r, &b, &bounding_box);
+        vswap(&matrices->l, &aux_l);
+        vswap(&matrices->r, &aux_r);
+    }
+    vmatrix_free(&aux_l);
+    vmatrix_free(&aux_r);
+    matrix_b_full(&matrices->l, &matrices->r, &b, &matrices->a);
+    if (ME == 0) {
+        Matrix final_b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
+        for (unsigned proc = 0; proc < NPROCS; ++proc) {
+            ABounds bounding_box =
+                a_bounds(proc, matrices->a.n_rows, matrices->a.n_cols);
+            vmatrix_change_offsets(
+                &b,
+                bounding_box.i.start,
+                bounding_box.i.end,
+                bounding_box.j.start,
+                bounding_box.j.end);
+            if (proc != 0) {
+                size_t count = (bounding_box.i.end - bounding_box.i.start) *
+                               (bounding_box.j.end - bounding_box.j.start);
+                mpi_recv_doubles(b.m.data, count, proc);
+            }
+            for (size_t i = bounding_box.i.start; i < bounding_box.i.end; ++i) {
+                for (size_t j = bounding_box.j.start; j < bounding_box.j.end;
+                     ++j) {
+                    double const* bij = VMATRIX_AT(&b, i, j);
+                    *MATRIX_AT_MUT(&final_b, i, j) = *bij;
+                }
             }
         }
+        vmatrix_free(&b);
+        return final_b;
+    } else {
+        mpi_send_doubles(b.m.data, b.m.rows * b.m.columns, 0);
     }
-    matrix_b_full(&matrices->l, &matrices->r, &b);
-    matrix_free(&aux_l);
-    matrix_free(&aux_r);
-    return b;
+    vmatrix_free(&b);
+    return (Matrix){0};
 }
