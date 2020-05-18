@@ -9,7 +9,7 @@ join_by() {
 set -e
 binary="$(grep '^PROG = ' makefile | cut -d'=' -f2 | sed -r 's/ //g')"
 targets=(mpi)
-modes=(release debug)
+modes=(debug release)
 # make release
 if [[ "$1" = bench* ]]; then
     [[ "$2" != nocompile ]] && make
