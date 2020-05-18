@@ -9,7 +9,7 @@
 
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
-static void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
+static inline void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
     assert(l->columns == r->rows);
     for (size_t i = 0; i < l->rows; i++) {
         for (size_t j = 0; j < r->columns; ++j) {
@@ -22,7 +22,7 @@ static void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
     }
 }
 
-static void matrix_b(
+static inline void matrix_b(
     Matrix const* l, Matrix const* r, Matrix* matrix, CompactMatrix const* a) {
     Item const* iter = a->items;
     Item const* const end = iter + a->current_items;
@@ -37,7 +37,7 @@ static void matrix_b(
     }
 }
 
-static void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
+static inline void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
     Item const* iter = matrices->a.items;
     Item const* const end = iter + matrices->a.current_items;
 
@@ -64,7 +64,7 @@ static void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b
     }
 }
 
-static void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
+static inline void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
     for (size_t k = 0; k < matrices->r.rows; k++) {
         Item const* iter = matrices->a_transpose.items;
         Item const* const end = iter + matrices->a_transpose.current_items;

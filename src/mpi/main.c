@@ -63,6 +63,8 @@ int main(int argc, char** argv) {
             case PARSER_ERROR_INVALID_FORMAT:
                 eputln("Format Error");
                 return EXIT_FAILURE;
+            case PARSER_ERROR_OK:
+                break;
             default:
                 break;
         }

@@ -41,13 +41,14 @@ OBJ_RELEASE_OPENMP = $(foreach o, $(patsubst $(SOURCES_OPENMP_DIR)/%.c, %.o, $(S
 OBJ_RELEASE_MPI    = $(foreach o, $(patsubst $(SOURCES_MPI_DIR)/%.c, %.o, $(SOURCES_MPI)), $(RELEASE_DIR_MPI)/$o)
 
 ifndef DFLAGS
-	#DFLAGS = -O0 -DNDEBUG -DNO_ASSERT
-	DFLAGS = -O0 -g -DDEBUG
+	DFLAGS = -O0 -DNDEBUG -DNO_ASSERT
+	#DFLAGS = -O0 -g -DDEBUG
 endif
 RFLAGS = -O3 -march=native -DNDEBUG -DNO_ASSERT -flto
 
-override CFLAGS += -std=c11 -W -Wextra -Wall -Wpedantic -pedantic -Werror=vla -flto
-MPIFLAGS = `mpicc --showme:compile` `mpicc --showme:link`
+override CFLAGS += -Wall -Wextra -Wparentheses -Wmissing-declarations -Wunreachable-code -Wunused
+override CFLAGS += -Wmissing-field-initializers -Wmissing-prototypes -Wswitch-enum -std=c11
+override CFLAGS += -Wredundant-decls -Wswitch-default -Wuninitialized -Werror=vla
 PROG = recomender
 OMPFLAGS = -fopenmp -Werror=unknown-pragmas
 LFLAGS = -lm

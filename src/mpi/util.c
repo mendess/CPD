@@ -32,7 +32,7 @@ bool should_work_alone(size_t const rows, size_t const columns) {
 // proc = 3, nprocs = 3 => 9
 static inline size_t start_chunk(
     unsigned const proc, unsigned const nprocs, size_t const num_elems) {
-    size_t const rem = (num_elems % nprocs);
+    size_t const rem = num_elems % nprocs;
     size_t const x = proc * (num_elems - rem) / nprocs;
     return x + (proc < rem ? proc : rem);
 }

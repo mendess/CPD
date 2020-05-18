@@ -29,7 +29,7 @@ Matrix matrix_clone(Matrix const* const other) {
     return new_m;
 }
 
-Matrix matrix_shallow_clone(Matrix const* const other) {
+static inline Matrix matrix_shallow_clone(Matrix const* const other) {
     Matrix new_m = (Matrix){
         .rows = other->rows,
         .columns = other->columns,
@@ -38,6 +38,7 @@ Matrix matrix_shallow_clone(Matrix const* const other) {
     return new_m;
 }
 
+#ifndef NO_ASSERT
 noreturn static void
 out_of_bounds(size_t rows, size_t columns, size_t row, size_t column) {
     eprintln(
@@ -62,6 +63,7 @@ double* matrix_at_mut(Matrix* a, size_t row, size_t column) {
     }
     return a->data + (row * a->columns + column);
 }
+#endif
 
 void matrix_free(Matrix* m) {
     free(m->data);
@@ -168,6 +170,7 @@ void vmatrix_change_offsets(
 #define MAX(a, b) (a > b ? a : b)
 #define MIN(a, b) (a < b ? a : b)
 
+#ifndef NO_ASSERT
 noreturn static void bellow_bounds(
     size_t const row, size_t row_offset, size_t column, size_t column_offset) {
 
@@ -200,6 +203,7 @@ double* vmatrix_at_mut(VMatrix* m, size_t row, size_t column) {
     }
     return matrix_at_mut(&m->m, row - m->row_offset, column - m->column_offset);
 }
+#endif
 
 void vmatrix_print_with_name(
     VMatrix const* const m,

@@ -9,7 +9,7 @@
 
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
-void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
+static inline void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
     assert(l->columns == r->rows);
 #pragma omp parallel for schedule(guided)
     for (size_t i = 0; i < l->rows; i++) {
@@ -22,7 +22,7 @@ void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
     }
 }
 
-void matrix_b(
+static inline void matrix_b(
     Matrix const* l, Matrix const* r, Matrix* matrix, CompactMatrix const* a) {
     Item const* const end = a->items + a->current_items;
 #pragma omp parallel for schedule(guided)
@@ -35,7 +35,7 @@ void matrix_b(
     }
 }
 
-void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
+static inline void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
     Item const* iter = matrices->a.items;
     Item const* const end = iter + matrices->a.current_items;
 
@@ -63,7 +63,7 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
     }
 }
 
-void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
+static inline void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
 #pragma omp parallel for schedule(guided)
     for (size_t k = 0; k < matrices->r.rows; ++k) {
         Item const* iter = matrices->a_transpose.items;

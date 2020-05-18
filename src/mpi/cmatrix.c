@@ -1,6 +1,8 @@
 #ifndef _DEFAULT_SOURCE
 #    define _DEFAULT_SOURCE
 #endif
+#include "mpi/cmatrix.h"
+
 #include "common/compact_matrix.h"
 #include "common/debug.h"
 #include "common/matrix.h"
@@ -35,10 +37,11 @@ void random_fill_LR_parts(
 
     for (row = 0; row < r->rows; ++row) {
         size_t col = 0;
-        for(; col < abounds.j.start; ++col) random();
-        for(; col < abounds.j.end; ++col) {
-            *MATRIX_AT_MUT(r, row, col - abounds.j.start) = RAND01 / (double) r->rows;
+        for (; col < abounds.j.start; ++col) random();
+        for (; col < abounds.j.end; ++col) {
+            *MATRIX_AT_MUT(r, row, col - abounds.j.start) =
+                RAND01 / (double) r->rows;
         }
-        for(; col < a->n_cols; ++col) random();
+        for (; col < a->n_cols; ++col) random();
     }
 }

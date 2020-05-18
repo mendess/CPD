@@ -42,16 +42,6 @@ void cmatrix_add(
         (Item){.value = value, .row = row, .column = column};
 }
 
-void cmatrix_add_without_lengths(
-    CompactMatrix* const m,
-    size_t const row,
-    size_t const column,
-    double const value) {
-    assert(m->current_items < m->_total_items);
-    m->items[m->current_items++] =
-        (Item){.value = value, .row = row, .column = column};
-}
-
 void cmatrix_print(CompactMatrix const* m) {
     Item const* iter = m->items;
     Item const* const end = iter + m->current_items;
