@@ -1,0 +1,14 @@
+Node 0: Filename:           large_instances/inst400-50000-30-200-500.in
+Node 1: PID: 3992
+Node 2: PID: 3993
+Node 3: PID: 3994
+Node 0: # Processes:        4
+Node 0: CheckerBoard side:  2
+Node 0: PID: 3991
+Node 0: A Rows:             400
+Node 0: A Columns:          50000
+Node 0: Distributed:        [32myes[0m
+Node 1: Finalizing
+Node 2: Finalizing
+Node 3: Finalizing
+Node 0: Finalizing

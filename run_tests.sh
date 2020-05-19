@@ -58,6 +58,7 @@ for mode in "${modes[@]}"; do
                         echo -e "Got\n$output"
                         echo -e "stderr:"
                         cat /tmp/err
+                        echo "Target $target mode $mode input $file failed" >> failed
                     }
                     true
                 else

@@ -1,0 +1,10 @@
+Node 0: Filename:           large_instances/inst500-500-20-2-100.in
+Node 0: # Processes:        1
+Node 0: CheckerBoard side:  1
+Node 0: PID: 2357
+Node 1: PID: 2358
+Node 1: Finalizing
+Node 0: A Rows:             500
+Node 0: A Columns:          500
+Node 0: Distributed:        [31mno[0m
+slurmstepd: error: *** STEP 94537.0 ON lab10p7 CANCELLED AT 2020-05-19T21:18:57 ***

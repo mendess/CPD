@@ -1,0 +1,135 @@
+Node 4: PID: 15322
+Node 0: Filename:           instances/inst0.in
+Node 0: # Processes:        64
+Node 0: CheckerBoard side:  8
+Node 0: PID: 8790
+Node 6: PID: 15324
+Node 9: PID: 12062
+Node 1: PID: 8791
+Node 7: PID: 15325
+Node 10: PID: 12063
+Node 24: PID: 7440
+Node 20: PID: 8400
+Node 17: PID: 6950
+Node 40: PID: 5355
+Node 48: PID: 4180
+Node 12: PID: 9536
+Node 57: PID: 559
+Node 44: PID: 7349
+Node 33: PID: 5074
+Node 2: PID: 8792
+Node 5: PID: 15323
+Node 8: PID: 12061
+Node 25: PID: 7441
+Node 21: PID: 8401
+Node 19: PID: 6952
+Node 42: PID: 5357
+Node 49: PID: 4181
+Node 13: PID: 9537
+Node 56: PID: 555
+Node 46: PID: 7351
+Node 32: PID: 5073
+Node 3: PID: 8793
+Node 11: PID: 12064
+Node 26: PID: 7442
+Node 22: PID: 8402
+Node 16: PID: 6949
+Node 41: PID: 5356
+Node 50: PID: 4182
+Node 36: PID: 13219
+Node 14: PID: 9538
+Node 58: PID: 560
+Node 45: PID: 7350
+Node 34: PID: 5075
+Node 27: PID: 7443
+Node 23: PID: 8403
+Node 18: PID: 6951
+Node 61: PID: 29385
+Node 43: PID: 5358
+Node 51: PID: 4183
+Node 37: PID: 13220
+Node 15: PID: 9539
+Node 59: PID: 563
+Node 47: PID: 7352
+Node 35: PID: 5076
+Node 62: PID: 29386
+Node 38: PID: 13221
+Node 63: PID: 29387
+Node 39: PID: 13222
+Node 52: PID: 679
+Node 60: PID: 29384
+Node 54: PID: 681
+Node 28: PID: 6819
+Node 55: PID: 682
+Node 30: PID: 6821
+Node 53: PID: 680
+Node 31: PID: 6822
+Node 29: PID: 6820
+Node 4: Finalizing
+Node 40: Finalizing
+Node 48: Finalizing
+Node 36: Finalizing
+Node 0: A Rows:             3
+Node 0: A Columns:          5
+Node 0: Distributed:        [31mno[0m
+Node 44: Finalizing
+Node 32: Finalizing
+Node 8: Finalizing
+Node 24: Finalizing
+Node 20: Finalizing
+Node 16: Finalizing
+Node 60: Finalizing
+Node 52: Finalizing
+Node 12: Finalizing
+Node 56: Finalizing
+Node 28: Finalizing
+Node 5: Finalizing
+Node 41: Finalizing
+Node 49: Finalizing
+Node 37: Finalizing
+Node 1: Finalizing
+Node 6: Finalizing
+Node 42: Finalizing
+Node 50: Finalizing
+Node 38: Finalizing
+Node 45: Finalizing
+Node 33: Finalizing
+Node 2: Finalizing
+Node 7: Finalizing
+Node 9: Finalizing
+Node 17: Finalizing
+Node 43: Finalizing
+Node 51: Finalizing
+Node 39: Finalizing
+Node 53: Finalizing
+Node 57: Finalizing
+Node 46: Finalizing
+Node 34: Finalizing
+Node 3: Finalizing
+Node 10: Finalizing
+Node 18: Finalizing
+Node 61: Finalizing
+Node 54: Finalizing
+Node 13: Finalizing
+Node 58: Finalizing
+Node 47: Finalizing
+Node 35: Finalizing
+Node 0: Finalizing
+Node 11: Finalizing
+Node 25: Finalizing
+Node 29: Finalizing
+Node 21: Finalizing
+Node 19: Finalizing
+Node 62: Finalizing
+Node 55: Finalizing
+Node 14: Finalizing
+Node 59: Finalizing
+Node 26: Finalizing
+Node 30: Finalizing
+Node 22: Finalizing
+Node 63: Finalizing
+Node 15: Finalizing
+Node 27: Finalizing
+Node 31: Finalizing
+Node 23: Finalizing
+Node 0: Total time = 0 seconds and 725581212 nano seconds aka 0.725581

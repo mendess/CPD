@@ -1,0 +1,10 @@
+Node 1: PID: 2242
+Node 0: Filename:           instances/inst0.in
+Node 0: # Processes:        1
+Node 0: CheckerBoard side:  1
+Node 0: PID: 2241
+Node 1: Finalizing
+Node 0: A Rows:             3
+Node 0: A Columns:          5
+Node 0: Distributed:        [31mno[0m
+slurmstepd: error: *** STEP 94502.0 ON lab10p7 CANCELLED AT 2020-05-19T21:16:19 ***

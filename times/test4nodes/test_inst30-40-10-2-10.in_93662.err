@@ -1,0 +1,14 @@
+Node 1: PID: 3624
+Node 2: PID: 3625
+Node 3: PID: 3626
+Node 0: Filename:           instances/inst30-40-10-2-10.in
+Node 0: # Processes:        4
+Node 0: CheckerBoard side:  2
+Node 0: PID: 3623
+Node 0: A Rows:             30
+Node 0: A Columns:          40
+Node 0: Distributed:        [32myes[0m
+Node 1: Finalizing
+Node 2: Finalizing
+Node 3: Finalizing
+Node 0: Finalizing
