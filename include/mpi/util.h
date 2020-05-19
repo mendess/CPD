@@ -2,8 +2,8 @@
 #define MPI_UTIL_H
 #include "common/matrix.h"
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 extern unsigned NPROCS;
 extern unsigned ME;
@@ -31,7 +31,7 @@ typedef struct {
 
 ABounds a_bounds(unsigned zone, size_t rows, size_t columns);
 
-unsigned proc_from_row_column(
-    size_t row, size_t column, size_t rows, size_t columns);
+unsigned
+proc_from_row_column(size_t row, size_t column, size_t rows, size_t columns);
 
 #endif // MPI_UTIL_H

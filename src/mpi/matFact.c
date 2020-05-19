@@ -189,8 +189,8 @@ static void next_iter_r(
 Matrix iter_mpi(VMatrices* const matrices) {
     unsigned hor_color = ME / CHECKER_BOARD_SIDE;
     unsigned ver_color = CHECKER_BOARD_SIDE + (ME % CHECKER_BOARD_SIDE);
-    MPI_Comm_split(MPI_COMM_WORLD, hor_color, ME, &HORIZONTAL_COMM);
-    MPI_Comm_split(MPI_COMM_WORLD, ver_color, ME, &VERTICAL_COMM);
+    MPI_Comm_split(WORLD_COMM, hor_color, ME, &HORIZONTAL_COMM);
+    MPI_Comm_split(WORLD_COMM, ver_color, ME, &VERTICAL_COMM);
     VMatrix aux_l = vmatrix_shallow_clone(&matrices->l);
     VMatrix aux_r = vmatrix_shallow_clone(&matrices->r);
     ABounds bounding_box = a_bounds(ME, matrices->a.n_rows, matrices->a.n_cols);

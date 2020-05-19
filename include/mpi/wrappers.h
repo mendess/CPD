@@ -21,6 +21,8 @@
 #    error "what is happening here?"
 #endif
 
+extern MPI_Comm WORLD_COMM;
+
 typedef enum { ROOT = 0 } Node;
 
 void mpi_send_size(size_t size, Node dest);

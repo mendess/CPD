@@ -38,6 +38,7 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+
     assert(me >= 0);
     assert(nprocs >= 0);
     ME = (unsigned) me;
@@ -47,6 +48,20 @@ int main(int argc, char** argv) {
     CHECKER_BOARD_SIDE = sqrt(NPROCS);
     VMatrices matrices = {0};
     G_ME = ME;
+
+    MPI_Group world_group;
+    MPI_Comm_group(MPI_COMM_WORLD, &world_group);
+    MPI_Group new_group;
+    int ranges[3] = {NPROCS, nprocs - 1, 1};
+    MPI_Group_range_excl(world_group, 1, &ranges, &new_group);
+    MPI_Comm new_world;
+    MPI_Comm_create(MPI_COMM_WORLD, new_group, &new_world);
+
+    if (new_world == MPI_COMM_NULL)
+        goto FINALIZE;
+    else
+        WORLD_COMM = new_world;
+
     if (ME == 0) {
         eprintln("Filename:           %s", argv[1]);
         eprintln("# Processes:        %u", NPROCS);
@@ -99,6 +114,7 @@ int main(int argc, char** argv) {
 
     vmatrices_free(&matrices);
 
+FINALIZE:
     eputln("Finalizing");
     MPI_Finalize();
     return 0;

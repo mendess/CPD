@@ -45,7 +45,7 @@ static void broadcast_header(Header* const header, MPI_Request* const request) {
     MPI_Type_create_struct(
         NUM_ITEMS, blocklengths, offsets, types, &mpi_header_t);
     MPI_Type_commit(&mpi_header_t);
-    MPI_Ibcast(header, 1, mpi_header_t, ROOT, MPI_COMM_WORLD, request);
+    MPI_Ibcast(header, 1, mpi_header_t, ROOT, WORLD_COMM, request);
 }
 
 static ParserError spit_parse_a(

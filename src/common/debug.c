@@ -79,8 +79,5 @@ noreturn void debug_print_backtrace(char const* const msg) {
         free(bt);
         free(func_addrs);
     }
-#ifdef MPI
-    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-#endif
     abort();
 }
