@@ -42,7 +42,7 @@ OBJ_RELEASE_MPI    = $(foreach o, $(patsubst $(SOURCES_MPI_DIR)/%.c, %.o, $(SOUR
 
 ifndef DFLAGS
 	DFLAGS = -O0 -DNDEBUG -DNO_ASSERT
-	#DFLAGS = -O0 -g -DDEBUG
+	#DFLAGS = -O0 -g -DDEBUG -rdynamic
 endif
 RFLAGS = -O3 -march=native -DNDEBUG -DNO_ASSERT -flto
 
@@ -73,7 +73,7 @@ $(DEBUG_DIR_OPENMP)/$(PROG): $(OBJ_DEBUG_COMMON) $(OBJ_DEBUG_OPENMP)
 
 $(DEBUG_DIR_MPI)/$(PROG): $(OBJ_DEBUG_COMMON_MPI) $(OBJ_DEBUG_MPI) $(DEBUG_DIR_COMMON_MPI)/matFact.o
 	@echo -e "\e[34mLinking $@\e[32m"
-	mpicc $(CFLAGS) -I$(HEADERS) -rdynamic $^ $(DFLAGS) -o $@ -DMPI $(LFLAGS)
+	mpicc $(CFLAGS) -I$(HEADERS) $^ $(DFLAGS) -o $@ -DMPI $(LFLAGS)
 	@echo -en "\e[0m"
 
 $(RELEASE_DIR_SERIAL)/$(PROG): $(OBJ_RELEASE_COMMON) $(OBJ_RELEASE_SERIAL)
