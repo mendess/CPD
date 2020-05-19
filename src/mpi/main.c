@@ -49,25 +49,17 @@ int main(int argc, char** argv) {
     VMatrices matrices = {0};
     G_ME = ME;
 
-    MPI_Group world_group;
-    MPI_Comm_group(MPI_COMM_WORLD, &world_group);
-    MPI_Group new_group;
-    int ranges[3] = {NPROCS, nprocs - 1, 1};
-    MPI_Group_range_excl(world_group, 1, &ranges, &new_group);
-    MPI_Comm new_world;
-    MPI_Comm_create(MPI_COMM_WORLD, new_group, &new_world);
-
-    if (new_world == MPI_COMM_NULL)
-        goto FINALIZE;
-    else
-        WORLD_COMM = new_world;
-
     if (ME == 0) {
         eprintln("Filename:           %s", argv[1]);
         eprintln("# Processes:        %u", NPROCS);
         eprintln("CheckerBoard side:  %u", CHECKER_BOARD_SIDE);
     }
     eprintln("PID: %d", getpid());
+
+    bool in = ME < NPROCS;
+    MPI_Comm_split(MPI_COMM_WORLD, in, ME, &WORLD_COMM);
+
+    if (!in) goto FINALIZE;
 
     if (ME == 0) {
         ParserError error = parse_file_rt(argv[1], &matrices);
