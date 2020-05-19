@@ -48,9 +48,9 @@ int main(int argc, char** argv) {
     VMatrices matrices = {0};
     G_ME = ME;
     if (ME == 0) {
-        eprintln("Filename:            %s", argv[1]);
-        eprintln("# Processes:         %u", NPROCS);
-        eprintln("Checker Board side:  %u", CHECKER_BOARD_SIDE);
+        eprintln("Filename:           %s", argv[1]);
+        eprintln("# Processes:        %u", NPROCS);
+        eprintln("CheckerBoard side:  %u", CHECKER_BOARD_SIDE);
     }
     eprintln("PID: %d", getpid());
 
@@ -71,9 +71,17 @@ int main(int argc, char** argv) {
     } else {
         recv_parsed_file(&matrices);
     }
+    if (ME == 0) {
+        eprintln("A Rows:             %zu", matrices.a.n_rows);
+        eprintln("A Columns:          %zu", matrices.a.n_cols);
+        eprintln(
+            "Distributed:        %s",
+            should_work_alone(matrices.a.n_rows, matrices.a.n_cols)
+                ? "\x1b[31mno\x1b[0m"
+                : "\x1b[32myes\x1b[0m");
+    }
     if (should_work_alone(matrices.a.n_rows, matrices.a.n_cols)) {
         if (ME == 0) {
-            eputln("I work alone");
             random_fill_LR(&matrices.l.m, &matrices.r.m);
             Matrices normal_matrices = matrices_from_vmatrices(matrices);
             NPROCS = 1;

@@ -22,7 +22,8 @@ void vswap(VMatrix* const a, VMatrix* const b) {
 }
 
 bool should_work_alone(size_t const rows, size_t const columns) {
-    return CHECKER_BOARD_SIDE > rows || CHECKER_BOARD_SIDE > columns;
+    return NPROCS == 1 || CHECKER_BOARD_SIDE > rows ||
+           CHECKER_BOARD_SIDE > columns;
 }
 
 // [x,x,x,x,x,x,x,x,x,x] num_iters = 10
