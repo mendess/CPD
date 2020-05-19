@@ -32,22 +32,56 @@ the calculations. %is this totally right?
 
 \section{Decomposition}
 When discussing how to perform the decomposition, the first idea was to divide the problem 
-for the rows in A. This meant was that each process would be in charge of 
-calculating the corresponding elements of matrix L and R. Altough this is a fairly easy
+for the rows in A. This meant that each process would be in charge of calculating the
+corresponding elements of matrix L and R. Altough this is a fairly easy
 approach, it gave way to some problems and obstacles. To perform this calculations,
 it was necessary to have one of the entire L or R matrix in memory, depending if one
 of them was transposed. %explain better
 Another problem that arose was the impossibility of calculating parts of matrix B in
 each node. This meant that, in every iteration, every node would need to send parts of
-matrix L and R so that matrix B could be calculated. Because matrix L and R could not fit
-in memory, the nodes would send chunks of each one as the master node was calculating 
-matrix B. %reword to explicity say that there was a lot of communication
+matrix L and R to the master node so that matrix B could be calculated. Because 
+matrix L and R could not fit in memory, the nodes would send chunks of each one as
+the master node was calculating matrix B. 
+%reword to explicity say that there was a lot of communication
 
 After implementing the aforementioned decomposition and seeing that the amount of
 communication was huge problem, a checkerboard decomposition was thought out and 
 implemented. To keep decomposition simple, the division was made using squares
-instead of rectangles. This allowed for simplified operations %talk about MPI_AllReduce
-but also brings some limitations: it is only possible to 
+instead of rectangles. This allows for simplified operations %talk about MPI_AllReduce
+but also brings some limitations: it is only possible to have $N^{2}$, where 
+$N = \{2, 3, 4, ...\}$, processors doing work. If a job is run with an invalid number
+of processor, the program will calculate the the program will calculate the nearest 
+valid number, but smaller than that given as parameter.
+
+%missing: calc L R
+
+Using a checkerboard approach also brings considerable improvements in communication. 
+With this approach, each node is capable of independently calculating a chunk of the
+B matrix without any communication to the master node. Only after completing all 
+iterations the nodes send the chunks of matrix B to the master, where they are
+pieced together and the final output is printed.
+%talk more about the mechanisms because i forgot some parts :\
+
+\section{Data Structures}
+The data structures from the OpenMP version were used, however some new ones were
+created to help with the checkerboard decomposition.
+\subsection{VMatrix}
+
+\subsection{ABounds}
+ 
+
+\section{Load Balancing}
+%is it worth talking? because even if we split in squares, there could be more non-zero
+%elems in some
+
+\section{Performance}
+As previously stated, the checkerboard decomposition provides a fairly good advantage 
+when comparing to the row decomposition. 
+%... compare with serial and maybe openmp?
+
+
+
+%talk somewhere about not using openmp 
  
 
 %You must eventually submit the sequential and both parallel versions of your program (please use the
