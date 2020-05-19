@@ -1,0 +1,66 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[cache=false]{minted}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{a4wide,syntax,listings,appendix,tikz,wrapfig,graphicx,hyperref}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{pgfplots}
+\usepackage{appendix}
+\hypersetup{pdftitle={g08report},
+pdfauthor={Pedro Mendes},
+colorlinks=true,
+urlcolor=blue,
+linkcolor=black}
+%\usetikzlibrary{arrows,positioning,automata,decorations.markings,shadows,shapes,calc}
+
+\begin{document}
+
+\title{Recomender System}
+\author{Pedro Mendes (97144), Filipe Lucas (78775), Ricardo Pereira (86506)}
+\date{\today}
+\maketitle
+%\tableofcontents
+
+
+\section{Serial} %delete or move relevant info to another place
+There was no change in the serial version, as it is working as intended. One important 
+thing to note is that the MPI version uses the serial version when the number of lines
+in matrix A is less than the number of processors, as it wouldn't be possible to perform
+the calculations. %is this totally right? 
+%maybe change to "as it wouldn't make sense to use MPI for these cases. 
+
+\section{Decomposition}
+When discussing how to perform the decomposition, the first idea was to divide the problem 
+for the rows in A. This meant was that each process would be in charge of 
+calculating the corresponding elements of matrix L and R. Altough this is a fairly easy
+approach, it gave way to some problems and obstacles. To perform this calculations,
+it was necessary to have one of the entire L or R matrix in memory, depending if one
+of them was transposed. %explain better
+Another problem that arose was the impossibility of calculating parts of matrix B in
+each node. This meant that, in every iteration, every node would need to send parts of
+matrix L and R so that matrix B could be calculated. Because matrix L and R could not fit
+in memory, the nodes would send chunks of each one as the master node was calculating 
+matrix B. %reword to explicity say that there was a lot of communication
+
+After implementing the aforementioned decomposition and seeing that the amount of
+communication was huge problem, a checkerboard decomposition was thought out and 
+implemented. To keep decomposition simple, the division was made using squares
+instead of rectangles. This allowed for simplified operations %talk about MPI_AllReduce
+but also brings some limitations: it is only possible to 
+ 
+
+%You must eventually submit the sequential and both parallel versions of your program (please use the
+%filenames indicated above), and a table with the times to run the parallel versions on input data that
+%will be made available (for 1, 2, 4 and 8 parallel tasks for both OpenMP and MPI, and additionally
+%16, 32 and 64 for MPI).
+%You must also submit a short report about the results (2 pages) that discusses:
+%	the approach used for parallelization
+%	what decomposition was used
+%	what were the synchronization concerns and why
+%	how was load balancing addressed
+%	what are the performance results, and are they what you expected
+
+
+\end{document}
+
