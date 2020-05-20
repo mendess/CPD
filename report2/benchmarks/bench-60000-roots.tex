@@ -1,0 +1,31 @@
+\begin{figure}[H]
+    \centering
+\begin{tikzpicture}
+    \begin{axis}[
+            ybar,
+            enlargelimits=true,
+            bar width=20pt,
+            width=\textwidth,
+            height=300pt,
+            legend style={at={(0.5,-0.15)}, anchor=north,legend columns=-1},
+            ylabel={seconds},
+            xlabel={nodes},
+            symbolic x coords={2,4,9,16,36,49,64},
+            xtick=data,
+            nodes near coords,
+            nodes near coords align={vertical},
+        ]
+\addplot coordinates {
+(2,724)	% ./guided_new_parser_bin
+(4,423)	% ./guided_new_parser_bin
+(9,450)	% ./guided_new_parser_bin
+(16,91)	% ./guided_new_parser_bin
+(36,108)	% ./guided_new_parser_bin
+(49,98)
+(64,68)	% ./guided_new_parser_bin
+};
+    \end{axis}
+\end{tikzpicture}
+    \caption{inst60000-2000-200-10-20}
+    \label{fig:60000}
+\end{figure}

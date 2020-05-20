@@ -1,0 +1,25 @@
+Node 1: PID: 27424
+Node 4: PID: 13590
+Node 8: PID: 2132
+Node 2: PID: 27425
+Node 7: PID: 13593
+Node 0: Filename:           instances/inst1.in
+Node 0: # Processes:        9
+Node 0: CheckerBoard side:  3
+Node 0: PID: 27423
+Node 5: PID: 13591
+Node 3: PID: 27426
+Node 6: PID: 13592
+Node 0: A Rows:             4
+Node 0: A Columns:          5
+Node 0: Distributed:        [32myes[0m
+Node 8: Finalizing
+Node 1: Finalizing
+Node 4: Finalizing
+Node 3: Finalizing
+Node 7: Finalizing
+Node 2: Finalizing
+Node 5: Finalizing
+Node 0: Finalizing
+Node 6: Finalizing
+Node 0: Total time = 22 seconds and 170845015 nano seconds aka 22.170845

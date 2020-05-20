@@ -1,6 +1,6 @@
-#include "parser.h"
+#include "common/parser.h"
 
-#include "compact_matrix.h"
+#include "common/compact_matrix.h"
 
 #include <fcntl.h>
 #include <stdarg.h>
@@ -10,20 +10,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-typedef struct StrIter {
-    char const* str;
-} StrIter;
-
-typedef struct Header {
-    size_t features;
-    size_t users;
-    size_t items;
-    size_t non_zero_elems;
-    double alpha;
-    unsigned int num_iterations;
-} Header;
-
-static char* read_file(char const* const filename) {
+char* read_file(char const* const filename) {
     int const fd = open(filename, O_RDONLY);
     if (fd == -1) {
         perror("recomender: failed to open input file");
@@ -49,12 +36,7 @@ static char* read_file(char const* const filename) {
     return file;
 }
 
-typedef enum FormatSpec {
-    DOUBLE,
-    SIZE_T,
-} FormatSpec;
-
-static size_t scan_line(
+size_t scan_line(
     StrIter* const s_iter, size_t n_specs, FormatSpec const* format, ...) {
     va_list args;
     va_start(args, format);
@@ -64,7 +46,7 @@ static size_t scan_line(
         switch (*format) {
             case DOUBLE: {
                 double* const arg = va_arg(args, double*);
-                char* end;
+                char* end = NULL;
                 *arg = strtod(s_iter->str, &end);
                 if (*arg == 0.0 && end == s_iter->str) goto END;
                 s_iter->str = end;
@@ -72,7 +54,7 @@ static size_t scan_line(
             }
             case SIZE_T: {
                 size_t* const arg = va_arg(args, size_t*);
-                char* end;
+                char* end = NULL;
                 *arg = strtoull(s_iter->str, &end, 10);
                 if (*arg == 0 && end == s_iter->str) goto END;
                 s_iter->str = end;
@@ -129,8 +111,9 @@ ParserError parse_header(StrIter* const iter, Header* const p) {
 ParserError parse_matrix_a(
     StrIter* const iter,
     size_t const non_zero_elems,
-    CompactMatrix* const a_prime,
-    CompactMatrix* const a_prime2) {
+    CompactMatrix* const a,
+    CompactMatrix* const a2) {
+
     size_t row, column;
     double value;
     size_t n_lines = 0;
@@ -142,14 +125,14 @@ ParserError parse_matrix_a(
                &column,
                &value) == 3) {
         ++n_lines;
-        if (row >= a_prime->n_rows || column >= a_prime->n_cols) {
+        if (row >= a->n_rows || column >= a->n_cols) {
             fprintf(
                 stderr,
                 "Invalid row or column values at line %zu."
                 " Max (%zu, %zu), got (%zu, %zu)\n",
                 n_lines,
-                a_prime->n_rows,
-                a_prime->n_cols,
+                a->n_rows,
+                a->n_cols,
                 row,
                 column);
             return PARSER_ERROR_INVALID_FORMAT;
@@ -164,8 +147,8 @@ ParserError parse_matrix_a(
                 value);
             return PARSER_ERROR_INVALID_FORMAT;
         }
-        cmatrix_add(a_prime, row, column, value);
-        cmatrix_add(a_prime2, column, row, value);
+        cmatrix_add(a, row, column, value);
+        cmatrix_add(a2, column, row, value);
     }
 
     if (n_lines < non_zero_elems) {
@@ -188,29 +171,28 @@ ParserError parse_file(char const* const filename, Matrices* const matrices) {
         return error;
     }
 
-    CompactMatrix a_prime =
+    CompactMatrix a =
         cmatrix_make(header.users, header.items, header.non_zero_elems);
-    CompactMatrix a_prime_transpose =
+    CompactMatrix a_transpose =
         cmatrix_make(header.items, header.users, header.non_zero_elems);
+
     error = parse_matrix_a(
-        &content_iter, header.non_zero_elems, &a_prime, &a_prime_transpose);
+        &content_iter, header.non_zero_elems, &a, &a_transpose);
     free(contents);
     if (error != PARSER_ERROR_OK) {
-        cmatrix_free(&a_prime);
-        cmatrix_free(&a_prime_transpose);
+        cmatrix_free(&a);
+        cmatrix_free(&a_transpose);
         return error;
     }
-    Matrix l = matrix_make(header.users, header.features);
-    Matrix r = matrix_make(header.features, header.items);
-    cmatrix_sort(&a_prime_transpose);
-    random_fill_LR(header.features, &l, &r);
+
+    cmatrix_sort(&a_transpose);
     *matrices = (Matrices){
         .num_iterations = header.num_iterations,
         .alpha = header.alpha,
-        .l = l,
-        .r = r,
-        .a_prime = a_prime,
-        .a_prime_transpose = a_prime_transpose,
+        .l = matrix_make(header.users, header.features),
+        .r = matrix_make(header.features, header.items),
+        .a = a,
+        .a_transpose = a_transpose,
     };
     return PARSER_ERROR_OK;
 }

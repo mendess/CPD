@@ -1,0 +1,9 @@
+Node 0: Filename:           large_instances/inst_new1000-80000-20-10-1000.in
+Node 1: PID: 28399
+Node 0: # Processes:        1
+Node 0: CheckerBoard side:  1
+Node 0: PID: 28398
+Node 1: Finalizing
+Node 0: A Rows:             1000
+Node 0: A Columns:          80000
+Node 0: Distributed:        [31mno[0m

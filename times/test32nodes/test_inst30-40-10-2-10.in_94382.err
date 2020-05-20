@@ -1,0 +1,71 @@
+Node 5: PID: 7474
+Node 24: PID: 4715
+Node 0: Filename:           large_instances/inst30-40-10-2-10.in
+Node 9: PID: 6595
+Node 4: PID: 7473
+Node 25: PID: 4716
+Node 10: PID: 6596
+Node 6: PID: 7475
+Node 16: PID: 4337
+Node 12: PID: 6031
+Node 26: PID: 4717
+Node 28: PID: 6598
+Node 20: PID: 12500
+Node 1: PID: 6035
+Node 11: PID: 6597
+Node 7: PID: 7476
+Node 17: PID: 4338
+Node 14: PID: 6033
+Node 27: PID: 4718
+Node 29: PID: 6599
+Node 22: PID: 12502
+Node 2: PID: 6036
+Node 8: PID: 6594
+Node 18: PID: 4339
+Node 15: PID: 6034
+Node 30: PID: 6600
+Node 21: PID: 12501
+Node 3: PID: 6037
+Node 19: PID: 4340
+Node 13: PID: 6032
+Node 31: PID: 6601
+Node 23: PID: 12503
+Node 0: # Processes:        25
+Node 0: CheckerBoard side:  5
+Node 0: PID: 6034
+Node 25: Finalizing
+Node 28: Finalizing
+Node 26: Finalizing
+Node 29: Finalizing
+Node 27: Finalizing
+Node 30: Finalizing
+Node 31: Finalizing
+Node 0: A Rows:             30
+Node 0: A Columns:          40
+Node 0: Distributed:        [32myes[0m
+Node 16: Finalizing
+Node 14: Finalizing
+Node 24: Finalizing
+Node 3: Finalizing
+Node 8: Finalizing
+Node 5: Finalizing
+Node 20: Finalizing
+Node 18: Finalizing
+Node 13: Finalizing
+Node 21: Finalizing
+Node 1: Finalizing
+Node 9: Finalizing
+Node 6: Finalizing
+Node 19: Finalizing
+Node 15: Finalizing
+Node 23: Finalizing
+Node 2: Finalizing
+Node 10: Finalizing
+Node 7: Finalizing
+Node 17: Finalizing
+Node 12: Finalizing
+Node 22: Finalizing
+Node 0: Finalizing
+Node 11: Finalizing
+Node 4: Finalizing
+Node 0: Total time = 7 seconds and 553293833 nano seconds aka 7.553294

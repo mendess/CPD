@@ -1,0 +1,15 @@
+Node 0: Filename:           large_instances/instML1M.in
+Node 0: # Processes:        4
+Node 0: CheckerBoard side:  2
+Node 0: PID: 28004
+Node 1: PID: 28005
+Node 2: PID: 28006
+Node 3: PID: 28007
+Node 0: A Rows:             6040
+Node 0: A Columns:          3952
+Node 0: Distributed:        [32myes[0m
+Node 1: Finalizing
+Node 2: Finalizing
+Node 3: Finalizing
+Node 0: Finalizing
+Node 0: Total time = 145 seconds and 476040367 nano seconds aka 145.476040

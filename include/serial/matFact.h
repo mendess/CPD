@@ -1,6 +1,6 @@
 #ifndef MATFACT_H
 #define MATFACT_H
-#include "matrix.h"
+#include "common/matrix.h"
 
 Matrix iter(Matrices*);
 

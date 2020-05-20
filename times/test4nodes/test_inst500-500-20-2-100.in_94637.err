@@ -1,0 +1,15 @@
+Node 0: Filename:           large_instances/inst500-500-20-2-100.in
+Node 0: # Processes:        4
+Node 0: CheckerBoard side:  2
+Node 0: PID: 1464
+Node 2: PID: 1466
+Node 1: PID: 1465
+Node 3: PID: 1467
+Node 0: A Rows:             500
+Node 0: A Columns:          500
+Node 0: Distributed:        [32myes[0m
+Node 1: Finalizing
+Node 2: Finalizing
+Node 3: Finalizing
+Node 0: Finalizing
+Node 0: Total time = 31 seconds and 60339948 nano seconds aka 31.060340

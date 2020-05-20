@@ -1,27 +1,34 @@
-#include "matFact.h"
+#include "serial/matFact.h"
 
-#include "compact_matrix.h"
-#include "parser.h"
+#include "common/compact_matrix.h"
+#include "common/debug.h"
+#include "common/parser.h"
 
 #include <assert.h>
 #include <stdio.h>
 
 #define DELTA(a, b, lr) (2 * ((a) - (b)) * -(lr))
 
-void matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
+static inline void
+matrix_b_full(Matrix const* l, Matrix const* r, Matrix* matrix) {
     assert(l->columns == r->rows);
     for (size_t i = 0; i < l->rows; i++) {
         for (size_t j = 0; j < r->columns; ++j) {
+            double bij = 0;
             for (size_t k = 0; k < l->columns; ++k) {
-                *MATRIX_AT(matrix, i, j) +=
-                    *MATRIX_AT(l, i, k) * *MATRIX_AT(r, k, j);
+                bij += *MATRIX_AT(l, i, k) * *MATRIX_AT(r, k, j);
             }
+            *MATRIX_AT_MUT(matrix, i, j) = bij;
         }
     }
 }
 
-void matrix_b(
-    Matrix const* l, Matrix const* r, Matrix* matrix, CompactMatrix const* a) {
+static inline void matrix_b(
+    Matrix const* const l,
+    Matrix const* const r,
+    Matrix* const matrix,
+    CompactMatrix const* const a) {
+
     Item const* iter = a->items;
     Item const* const end = iter + a->current_items;
 
@@ -30,14 +37,15 @@ void matrix_b(
         for (size_t k = 0; k < l->columns; k++) {
             bij += *MATRIX_AT(l, iter->row, k) * *MATRIX_AT(r, k, iter->column);
         }
-        *MATRIX_AT(matrix, iter->row, iter->column) = bij;
+        *MATRIX_AT_MUT(matrix, iter->row, iter->column) = bij;
         ++iter;
     }
 }
 
-void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
-    Item const* iter = matrices->a_prime.items;
-    Item const* const end = iter + matrices->a_prime.current_items;
+static inline void
+next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
+    Item const* iter = matrices->a.items;
+    Item const* const end = iter + matrices->a.current_items;
 
     while (iter != end) {
         size_t counter = 0;
@@ -55,20 +63,19 @@ void next_iter_l(Matrices const* matrices, Matrix* aux_l, Matrix const* b) {
                 ++line_iter;
                 ++counter;
             }
-            *MATRIX_AT(aux_l, row, k) =
+            *MATRIX_AT_MUT(aux_l, row, k) =
                 *MATRIX_AT(&matrices->l, row, k) - matrices->alpha * aux;
         }
         iter += counter;
     }
 }
 
-void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
+static inline void
+next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
     for (size_t k = 0; k < matrices->r.rows; k++) {
-        Item const* iter = matrices->a_prime_transpose.items;
-        Item const* const end =
-            iter + matrices->a_prime_transpose.current_items;
-        for (size_t column = 0; iter != end && column < matrices->r.columns;
-             column++) {
+        Item const* iter = matrices->a_transpose.items;
+        Item const* const end = iter + matrices->a_transpose.current_items;
+        while (iter != end) {
             double aux = 0;
             size_t const column = iter->row;
             while (iter != end && iter->row == column) {
@@ -79,7 +86,7 @@ void next_iter_r(Matrices const* matrices, Matrix* aux_r, Matrix const* b) {
                     *MATRIX_AT(&matrices->l, row, k));
                 ++iter;
             }
-            *MATRIX_AT(aux_r, k, column) =
+            *MATRIX_AT_MUT(aux_r, k, column) =
                 *MATRIX_AT(&matrices->r, k, column) - matrices->alpha * aux;
         }
     }
@@ -94,9 +101,9 @@ static inline void swap(Matrix* a, Matrix* b) {
 Matrix iter(Matrices* matrices) {
     Matrix aux_l = matrix_clone(&matrices->l);
     Matrix aux_r = matrix_clone(&matrices->r);
-    Matrix b = matrix_make(matrices->a_prime.n_rows, matrices->a_prime.n_cols);
+    Matrix b = matrix_make(matrices->a.n_rows, matrices->a.n_cols);
     for (size_t i = 0; i < matrices->num_iterations; i++) {
-        matrix_b(&matrices->l, &matrices->r, &b, &matrices->a_prime);
+        matrix_b(&matrices->l, &matrices->r, &b, &matrices->a);
         next_iter_l(matrices, &aux_l, &b);
         next_iter_r(matrices, &aux_r, &b);
         swap(&matrices->l, &aux_l);

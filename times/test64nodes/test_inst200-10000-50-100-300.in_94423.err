@@ -1,0 +1,135 @@
+Node 4: PID: 2512
+Node 13: PID: 30190
+Node 24: PID: 29077
+Node 9: PID: 855
+Node 20: PID: 31734
+Node 1: PID: 29231
+Node 6: PID: 2514
+Node 14: PID: 30191
+Node 11: PID: 857
+Node 21: PID: 31735
+Node 2: PID: 29232
+Node 5: PID: 2513
+Node 17: PID: 591
+Node 32: PID: 27555
+Node 15: PID: 30192
+Node 25: PID: 29078
+Node 10: PID: 856
+Node 22: PID: 31736
+Node 37: PID: 26552
+Node 28: PID: 30240
+Node 3: PID: 29233
+Node 7: PID: 2515
+Node 40: PID: 2137
+Node 52: PID: 3339
+Node 45: PID: 2605
+Node 18: PID: 592
+Node 33: PID: 27556
+Node 12: PID: 30189
+Node 26: PID: 29079
+Node 8: PID: 854
+Node 23: PID: 31737
+Node 36: PID: 26551
+Node 30: PID: 30242
+Node 0: Filename:           large_instances/inst200-10000-50-100-300.in
+Node 0: # Processes:        64
+Node 0: CheckerBoard side:  8
+Node 0: PID: 29230
+Node 41: PID: 2138
+Node 54: PID: 3341
+Node 44: PID: 2604
+Node 16: PID: 590
+Node 34: PID: 27557
+Node 27: PID: 29080
+Node 38: PID: 26553
+Node 29: PID: 30241
+Node 42: PID: 2139
+Node 53: PID: 3340
+Node 46: PID: 2606
+Node 19: PID: 593
+Node 35: PID: 27558
+Node 39: PID: 26554
+Node 31: PID: 30243
+Node 60: PID: 3722
+Node 43: PID: 2141
+Node 55: PID: 3342
+Node 47: PID: 2607
+Node 62: PID: 3724
+Node 49: PID: 2905
+Node 61: PID: 3723
+Node 51: PID: 2907
+Node 63: PID: 3725
+Node 50: PID: 2906
+Node 57: PID: 2882
+Node 48: PID: 2904
+Node 59: PID: 2884
+Node 56: PID: 2881
+Node 58: PID: 2883
+Node 0: A Rows:             200
+Node 0: A Columns:          10000
+Node 0: Distributed:        [32myes[0m
+Node 1: Finalizing
+Node 2: Finalizing
+Node 3: Finalizing
+Node 4: Finalizing
+Node 5: Finalizing
+Node 6: Finalizing
+Node 7: Finalizing
+Node 8: Finalizing
+Node 9: Finalizing
+Node 10: Finalizing
+Node 11: Finalizing
+Node 12: Finalizing
+Node 13: Finalizing
+Node 14: Finalizing
+Node 15: Finalizing
+Node 16: Finalizing
+Node 17: Finalizing
+Node 18: Finalizing
+Node 19: Finalizing
+Node 20: Finalizing
+Node 21: Finalizing
+Node 22: Finalizing
+Node 23: Finalizing
+Node 24: Finalizing
+Node 25: Finalizing
+Node 26: Finalizing
+Node 27: Finalizing
+Node 28: Finalizing
+Node 29: Finalizing
+Node 30: Finalizing
+Node 31: Finalizing
+Node 32: Finalizing
+Node 33: Finalizing
+Node 34: Finalizing
+Node 35: Finalizing
+Node 36: Finalizing
+Node 37: Finalizing
+Node 38: Finalizing
+Node 39: Finalizing
+Node 40: Finalizing
+Node 41: Finalizing
+Node 42: Finalizing
+Node 43: Finalizing
+Node 44: Finalizing
+Node 45: Finalizing
+Node 46: Finalizing
+Node 47: Finalizing
+Node 48: Finalizing
+Node 49: Finalizing
+Node 50: Finalizing
+Node 51: Finalizing
+Node 52: Finalizing
+Node 53: Finalizing
+Node 54: Finalizing
+Node 55: Finalizing
+Node 56: Finalizing
+Node 57: Finalizing
+Node 58: Finalizing
+Node 59: Finalizing
+Node 60: Finalizing
+Node 61: Finalizing
+Node 62: Finalizing
+Node 63: Finalizing
+Node 0: Finalizing
+Node 0: Total time = 41 seconds and -469324359 nano seconds aka 40.530676
