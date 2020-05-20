@@ -1,0 +1,25 @@
+Node 1: PID: 26924
+Node 4: PID: 23971
+Node 6: PID: 23973
+Node 0: Filename:           large_instances/instML100k.in
+Node 0: # Processes:        9
+Node 0: CheckerBoard side:  3
+Node 0: PID: 26923
+Node 8: PID: 21813
+Node 7: PID: 23974
+Node 2: PID: 26925
+Node 5: PID: 23972
+Node 3: PID: 26926
+Node 0: A Rows:             943
+Node 0: A Columns:          1682
+Node 0: Distributed:        [32myes[0m
+Node 1: Finalizing
+Node 2: Finalizing
+Node 3: Finalizing
+Node 4: Finalizing
+Node 5: Finalizing
+Node 6: Finalizing
+Node 7: Finalizing
+Node 8: Finalizing
+Node 0: Finalizing
+Node 0: Total time = 52 seconds and -684994292 nano seconds aka 51.315006

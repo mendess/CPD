@@ -1,0 +1,25 @@
+Node 0: Filename:           large_instances/inst_new60000-2000-200-10-20.in
+Node 0: # Processes:        9
+Node 0: CheckerBoard side:  3
+Node 0: PID: 14871
+Node 8: PID: 9451
+Node 6: PID: 9165
+Node 2: PID: 14873
+Node 7: PID: 9166
+Node 3: PID: 14874
+Node 4: PID: 9163
+Node 1: PID: 14872
+Node 5: PID: 9164
+Node 0: A Rows:             60000
+Node 0: A Columns:          2000
+Node 0: Distributed:        [32myes[0m
+Node 1: Finalizing
+Node 2: Finalizing
+Node 3: Finalizing
+Node 4: Finalizing
+Node 5: Finalizing
+Node 6: Finalizing
+Node 7: Finalizing
+Node 8: Finalizing
+Node 0: Finalizing
+Node 0: Total time = 342 seconds and -622895945 nano seconds aka 341.377104
