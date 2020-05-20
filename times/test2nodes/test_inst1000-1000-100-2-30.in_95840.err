@@ -1,0 +1,11 @@
+Node 0: Filename:           large_instances/inst1000-1000-100-2-30.in
+Node 0: # Processes:        1
+Node 0: CheckerBoard side:  1
+Node 0: PID: 11990
+Node 1: PID: 11991
+Node 1: Finalizing
+Node 0: A Rows:             1000
+Node 0: A Columns:          1000
+Node 0: Distributed:        [31mno[0m
+Node 0: Finalizing
+Node 0: Total time = 12 seconds and -229689187 nano seconds aka 11.770311

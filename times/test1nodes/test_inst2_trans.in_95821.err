@@ -1,0 +1,9 @@
+Node 0: Filename:           instances/inst2_trans.in
+Node 0: # Processes:        1
+Node 0: CheckerBoard side:  1
+Node 0: PID: 5587
+Node 0: A Rows:             5
+Node 0: A Columns:          7
+Node 0: Distributed:        [31mno[0m
+Node 0: Finalizing
+Node 0: Total time = 1 seconds and -495217282 nano seconds aka 0.504783

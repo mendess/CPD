@@ -1,0 +1,8 @@
+Node 0: Filename:           large_instances/inst_new60000-2000-200-10-20.in
+Node 0: # Processes:        1
+Node 0: CheckerBoard side:  1
+Node 0: PID: 11595
+Node 0: A Rows:             60000
+Node 0: A Columns:          2000
+Node 0: Distributed:        [31mno[0m
+slurmstepd: error: Detected 1 oom-kill event(s) in step 95834.0 cgroup. Some of your processes may have been killed by the cgroup out-of-memory handler.
